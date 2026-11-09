@@ -16,7 +16,7 @@
   #lock { padding: 6px 10px; } #lock .lbl { display: none; }
   .pagehead { display: none !important; }
   /* Navigation: bottom tabs on phones, sidebar from 768px */
-  #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; background: #fff; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(7, 1fr); padding: 4px 2px calc(4px + env(safe-area-inset-bottom)); }
+  #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; background: #fff; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(8, 1fr); padding: 4px 2px calc(4px + env(safe-area-inset-bottom)); }
   #nav a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; text-decoration: none; color: var(--mute); font-size: 10px; padding: 4px 0; border-radius: 10px; white-space: nowrap; overflow: hidden; }
   #nav a .ic { font-size: 20px; line-height: 1.1; }
   #nav a.on { color: var(--accent); background: #eef2ff; font-weight: 600; }
@@ -194,6 +194,16 @@
   .meter.low i { background: var(--bad); }
   #pdirMsg { flex-basis: 100%; }
   #storage input[name=photos_dir] { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+  /* Flipboard (#/flipboard; the split-flap Board, server/board/) */
+  pre.bprev { font: 700 13px/1.25 ui-monospace, Menlo, monospace; background: #151413; color: #EDE9E0; border-radius: 8px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; letter-spacing: .08em; }
+  .bty-alert { background: #fde3df; color: #9b1c12; } .bty-personal { background: #ece8fb; color: #4a3a9a; } .bty-live { background: #e2f0ff; color: #164f8c; }
+  .bty-scheduled { background: #e3f4e8; color: #1d6b38; } .bty-ambient { background: #f1efe9; color: #5b554b; }
+  details.bscreen { border-top: 1px solid var(--line); padding: 8px 0; }
+  details.bscreen > summary { cursor: pointer; padding: 4px 0; }
+  form.wg-card[data-board] .form-foot { margin-top: 4px; }
+  code.btok { display: block; font: 13px ui-monospace, Menlo, monospace; background: #f1f0ec; padding: 6px 8px; border-radius: 8px; user-select: all; -webkit-user-select: all; word-break: break-all; }
+  .full { flex-basis: 100%; }
+  #board-token code, #board-post code { word-break: break-all; }
 </style>
 </head>
 <body>
@@ -1085,7 +1095,8 @@ document.addEventListener('click', function (e) {
 // ------------------------------------------------------------------ screens (devices) + profiles
 var FAMILY_TABS = [['home', 'Today', 'Clock, weather and today at a glance'], ['calendar', 'Calendar', 'Family events'], ['tasks', 'Chores', 'Everyone’s chore lists'],
   ['shopping', 'Shopping', 'Grocery list and usuals'], ['photos', 'Photos', 'Slideshow and artwork'], ['devices', 'Screens', 'Screen list (parent use)'],
-  ['profiles', 'Profiles', 'Screen profiles (parent use)'], ['control', 'Home (HA)', 'Home Assistant controls'], ['agents', 'Agents', 'Agent activity']];
+  ['profiles', 'Profiles', 'Screen profiles (parent use)'], ['control', 'Home (HA)', 'Home Assistant controls'], ['agents', 'Agents', 'Agent activity'],
+  ['board', 'Flipboard', 'Split-flap message board (set it up under Flipboard)']];
 var EXTRA_TABS = [['kids', 'All kid tabs', 'One combined kids tab that follows the People list']];
 function tabOptions() {
   return FAMILY_TABS.concat(EXTRA_TABS).map(function (o) { return [o[0], o[1]]; })
@@ -1285,18 +1296,207 @@ document.addEventListener('click', function (e) {
 });
 
 // ------------------------------------------------------------------ routing: one section visible at a time
-var NAV = [['today', '🏠', 'Today'], ['people', '👪', 'People'], ['chores', '⭐', 'Chores'], ['screens', '🖼️', 'Screens'], ['home', '💡', 'Home'], ['photos', '📷', 'Photos'], ['settings', '⚙️', 'Settings']];
+var NAV = [['today', '🏠', 'Today'], ['people', '👪', 'People'], ['chores', '⭐', 'Chores'], ['screens', '🖼️', 'Screens'], ['home', '💡', 'Home'], ['photos', '📷', 'Photos'], ['flipboard', '🔠', 'Flipboard'], ['settings', '⚙️', 'Settings']];
 // Old single-page anchors (#approvals etc.) → new routes so bookmarks keep working
+// ------------------------------------------------------------------ Flipboard (#/flipboard; server/board/; internal names stay 'board')
+// BS = GET /api/board/admin. Live grid changes (SSE topic 'board') only refresh the previews (boardLive), so nothing
+// being edited is redrawn; config changes come as 'board-config' through the usual patch().
+var BS = null, BS_LOADING = false;
+var B_TYPES = [['alert', 'Alert', 'Preempts everything, short dwell, clears fast'], ['personal', 'Personal', 'Posted notes: biggest share, fades with age'],
+  ['live', 'Live', 'Weather, sensors, planes: hidden when stale'], ['scheduled', 'Scheduled', 'Next events, countdowns, messages with a time window'], ['ambient', 'Ambient', 'Verses and quotes between the rest']];
+function boardRoute() { var r = route(); return !!(r && r.top === 'flipboard'); }
+function loadBoard() { return api('GET', 'board/admin').then(function (b) { BS = b; }); }
+var blT = null;
+function boardLive() {
+  if (!boardRoute() || blT) return;
+  blT = setTimeout(function () {
+    blT = null;
+    loadBoard().then(function () {
+      BS.screens.forEach(function (s) {
+        var pre = document.querySelector('[data-bprev="' + CSS.escape(s.id) + '"]');
+        if (pre) pre.textContent = s.preview;
+        var lab = document.querySelector('[data-bcard="' + CSS.escape(s.id) + '"]');
+        if (lab) lab.innerHTML = boardCardLabel(s);
+      });
+    }).catch(function () {});
+  }, 800);
+}
+function boardCardLabel(s) {
+  if (!s.card) return '<span class="pill">empty</span>';
+  return '<span class="pill bty-' + esc(s.card.type) + '">' + esc(s.card.type) + '</span> <small class="hint">' + esc(s.card.source === 'post' ? 'posted note' : s.card.source) + '</small>';
+}
+function bOpt(list, val) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(val) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
+function tabName(t) {
+  var f = FAMILY_TABS.concat(EXTRA_TABS).filter(function (o) { return o[0] === t; })[0];
+  if (f) return f[1];
+  var p = /^person-(\d+)$/.exec(t), who = p && S.people.filter(function (x) { return String(x.id) === p[1]; })[0];
+  return who ? who.name + '’s tab' : t;
+}
+function flipNote(s) {
+  if (!s.cfg.flip) return 'Flip is off: changes are instant.';
+  if (s.flip3d === 0) return '⚠ Flip is on, but this screen’s browser can’t do 3D transforms, so it shows instant changes.';
+  return s.flip3d === 1 ? 'Flip is on (3D works on this screen).' : 'Flip is on (this screen hasn’t opened the Flipboard yet).';
+}
+function boardPage() {
+  if (!BS) {
+    if (!BS_LOADING) { BS_LOADING = true; loadBoard().then(function () { BS_LOADING = false; if (boardRoute()) render(); }).catch(function (e) { BS_LOADING = false; toast(e.message); }); }
+    return '<section id="board-loading"><p class="hint">Loading the Flipboard…</p></section>';
+  }
+  var devs = BS.screens.filter(function (s) { return !s.profile; }), on = devs.filter(function (s) { return s.cfg.enabled; });
+  var screenOpts = [['all', 'All Flipboard screens']].concat(devs.map(function (s) { return [s.id, s.name]; }));
+  // 1. what each screen shows now (live)
+  var html = '<section id="board-preview"><h2>Now showing</h2><p class="hint">A split-flap message board tab on the frames. Each screen picks one card at a time: alerts first, then posted notes, then live and scheduled cards, with verses and quotes in between.</p>' +
+    (on.length ? '<div class="wg-grid">' + on.map(function (s) {
+      return '<div class="wg-card"><h4>' + esc(s.name) + '<span data-bcard="' + esc(s.id) + '" style="margin-left:auto;font-weight:400">' + boardCardLabel(s) + '</span></h4><pre class="bprev" data-bprev="' + esc(s.id) + '">' + esc(s.preview) + '</pre>' +
+        '<span class="card-desc' + (s.cfg.flip && s.flip3d === 0 ? ' err' : '') + '">' + esc(flipNote(s)) + (s.inTabs ? '' : ' Its tab is unticked under Screens.') + '</span></div>';
+    }).join('') + '</div>' : emptyBox('No screen shows the Flipboard yet', 'Turn it on for a screen under “Screens” below.')) + '</section>';
+  // 2. post a note
+  html += '<section id="board-post"><h2>Post a message</h2><p class="hint">Notes show often at first, then less as they age, and go away after the time limit. Sticky or urgent ones are alerts: they jump the queue (urgent ones even in quiet hours). Colours: <code>{red}TEXT{/}</code> (red orange yellow green blue violet white), tiles: <code>[green]</code>.</p>' +
+    '<form class="row" data-board="post" style="border-top:0"><label style="flex-basis:100%">Message<textarea name="text" rows="3" maxlength="600" placeholder="{green}DINNER{/} AT 6:30"></textarea></label>' +
+    '<label>Screen<select name="screen">' + bOpt(screenOpts, 'all') + '</select></label>' +
+    '<label class="narrow">Hours<input type="number" name="ttl_hours" min="0.05" step="0.5" placeholder="' + (BS.types.personal.ttl / 3600) + '"></label>' +
+    '<label class="narrow">Sticky<input type="checkbox" name="sticky"></label><label class="narrow">Urgent<input type="checkbox" name="urgent"></label>' +
+    '<div class="form-foot"><button class="primary">Post</button>' + (BS.messages.length ? '<button type="button" class="danger" data-bmsg-clear>Clear all</button>' : '') + '</div></form>' +
+    BS.messages.map(function (m) {
+      var exp = m.sticky ? 'sticky' : m.expires_at ? (m.expired ? 'expired ' : 'until ') + new Date(m.expires_at).toLocaleString() : '';
+      return '<div class="item"><span class="grow"><b>' + esc(m.text) + '</b><br><small class="hint"><span class="pill bty-' + m.type + '">' + m.type + '</span> ' + esc(m.screens === 'all' ? 'all screens' : nameOfScreen(m.screens)) + ' · ' + esc(exp) + (m.urgent ? ' · urgent' : '') + '</small></span><button type="button" data-bmsg-del="' + m.id + '">Dismiss</button></div>';
+    }).join('') + '</section>';
+  // 3. per screen
+  html += '<section id="board-screens"><h2>Screens</h2><p class="hint">Each screen (and profile) has its own Flipboard: which sources, colours, flip and weights. A profile’s Flipboard setup goes to a screen when the profile is applied.</p>' +
+    BS.screens.map(boardScreenForm).join('') + '</section>';
+  // 4. sources (shared pool)
+  html += '<section id="board-sources"><h2>Sources</h2><p class="hint">Shared by every screen; a screen can switch each one on or off. Sources that need a key or an account stay off until you set them up.</p><div class="wg-grid">' +
+    BS.kinds.map(boardSourceForm).join('') + '</div></section>';
+  // 5. card types
+  html += '<section id="board-types"><h2>Card types</h2><p class="hint">Order of importance: Alert › Personal › Live = Scheduled › Ambient. A higher card never waits behind a lower one. Times in seconds; weights are the share of turns (a screen can override them).</p>' +
+    '<form class="row" data-board="types" style="border-top:0"><div class="wg-grid">' + B_TYPES.map(function (t) {
+      var d = BS.types[t[0]], base = BS.typeBase[t[0]], f = function (k, label) { return k in base ? '<label class="narrow">' + label + '<input type="number" step="any" name="' + t[0] + '.' + k + '" value="' + esc(d[k]) + '"></label>' : ''; };
+      return card(t[1], t[2], f('dwell', 'Dwell s') + f('ttl', 'Lasts s') + f('weight', 'Weight') + f('stale', 'Stale after s') + f('half_life', 'Half-life s') + f('floor', 'Min share') +
+        '<label class="narrow">Accent<select name="' + t[0] + '.accent">' + bOpt(BS.accents.map(function (a) { return [a, a || 'none']; }), d.accent || '') + '</select></label>');
+    }).join('') + '</div><div class="form-foot"><button class="primary">Save card types</button></div></form></section>';
+  // 6. token for Home Assistant / Shortcuts
+  html += '<section id="board-token"><h2>Post from Home Assistant or Shortcuts</h2><p class="hint">POST to <code>/api/board/message</code> with the parent PIN (<code>X-PIN</code>) or this token (<code>Authorization: Bearer …</code>). Body: <code>{"text":"…","screen":"all","sticky":false,"urgent":false,"ttl_hours":12}</code>.</p>' +
+    '<p>' + (BS.token_set ? 'A token is set (' + esc(BS.token) + ').' : 'No token: only the PIN works.') + '</p><div id="bTokenOut"></div>' +
+    '<div class="form-foot"><button type="button" data-btoken-new>' + (BS.token_set ? 'Make a new token' : 'Make a token') + '</button>' + (BS.token_set ? '<button type="button" class="danger" data-btoken-clear>Remove token</button>' : '') + '</div></section>';
+  return html;
+}
+function nameOfScreen(id) { var s = BS && BS.screens.filter(function (x) { return x.id === id; })[0]; return s ? s.name : id; }
+var B_OPEN = {}; // screens opened/closed by hand stay that way across live redraws
+document.addEventListener('toggle', function (e) { var d = e.target; if (d.classList && d.classList.contains('bscreen')) B_OPEN[d.dataset.bid] = d.open; }, true);
+function boardScreenForm(s) {
+  var c = s.cfg, w = c.weights || {};
+  var after = [['', 'At the end']].concat((s.tabList || []).filter(function (t) { return t !== 'board'; }).map(function (t) { return [t, 'After ' + tabName(t)]; }));
+  var others = BS.screens.filter(function (x) { return x.id !== s.id; }).map(function (x) { return [x.id, x.name]; });
+  var srcs = BS.kinds.map(function (k) {
+    var o = c.sources[k.kind] || {}, v = o.on == null ? '' : o.on ? '1' : '0';
+    return '<label>' + esc(k.label) + '<select name="src.' + k.kind + '">' + bOpt([['', 'Shared (' + (k.pool.enabled ? 'on' : 'off') + ')'], ['1', 'On'], ['0', 'Off']], v) + '</select></label>';
+  }).join('');
+  var open = B_OPEN[s.id] != null ? B_OPEN[s.id] : c.enabled;
+  return '<details class="bscreen" data-bid="' + esc(s.id) + '"' + (open ? ' open' : '') + '><summary><b>' + esc(s.name) + '</b> ' + (c.enabled ? '<span class="pill">Flipboard on</span>' : '<span class="pill">off</span>') + (s.profile ? '' : ' ' + seenPill(s)) + '</summary>' +
+    '<form class="row" data-board="screen" data-id="' + esc(s.id) + '" style="border-top:0"><div class="wg-grid">' +
+    card('Tab', s.profile ? 'Screens get this when the profile is applied.' : 'Show the Flipboard tab on this screen, and where.',
+      '<label class="narrow">Flipboard on<input type="checkbox" name="enabled"' + (c.enabled ? ' checked' : '') + '></label><label>Position<select name="tab_after">' + bOpt(after, c.tab_after || '') + '</select></label>') +
+    card('Look', 'Grid size, colours, the flip animation, and full screen (the menu hides on the Flipboard tab; a tap shows it for 8 seconds).',
+      '<label>Grid<select name="grid">' + bOpt([['22x6', '22 × 6 (Vestaboard)'], ['custom', 'Custom']], c.grid) + '</select></label>' +
+      '<label class="narrow">Columns<input type="number" name="cols" min="8" max="40" value="' + esc(c.cols) + '"></label><label class="narrow">Rows<input type="number" name="rows" min="2" max="16" value="' + esc(c.rows) + '"></label>' +
+      '<label>Colours<select name="palette">' + bOpt([['standard', 'Standard'], ['bright', 'Bright (kids)']], c.palette) + '</select></label>' +
+      '<label class="narrow">Flip<input type="checkbox" name="flip"' + (c.flip ? ' checked' : '') + '></label><label class="narrow">Flips at once<input type="number" name="flip_cap" min="1" max="64" value="' + esc(c.flip_cap) + '"></label>' +
+      '<label class="narrow">Full screen (hide menu)<input type="checkbox" name="full"' + (c.full !== false ? ' checked' : '') + '></label>' +
+      (s.profile ? '' : '<small class="full ' + (c.flip && s.flip3d === 0 ? 'err' : 'hint') + '">' + esc(flipNote(s)) + '</small>')) +
+    card('Card types', 'Which kinds of cards run here, and their share of turns (blank = default).',
+      B_TYPES.map(function (t) { return '<label class="narrow">' + t[1] + '<input type="checkbox" name="type.' + t[0] + '"' + (c.types[t[0]] !== false ? ' checked' : '') + '></label>'; }).join('') +
+      ['personal', 'live', 'scheduled', 'ambient'].map(function (t) { return '<label class="narrow">' + t + ' weight<input type="number" step="any" min="0" name="w.' + t + '" value="' + esc(w[t] == null ? '' : w[t]) + '" placeholder="' + esc(BS.types[t].weight) + '"></label>'; }).join('')) +
+    card('Sources', 'On, off, or follow the shared setting.', srcs) +
+    '<div class="wg-panel"><h4>Messages for this screen</h4><span class="card-desc">Blank = the shared static messages (Sources › Static messages). ' + esc(BS.kinds.filter(function (k) { return k.kind === 'static'; })[0].fields[0].hint) + '</span>' +
+      '<textarea name="static_text" rows="3" placeholder="Uses the shared messages">' + esc(s.staticText || '') + '</textarea></div>' +
+    '</div><div class="form-foot"><button class="primary">Save</button>' +
+    (others.length ? '<select name="copy_from" style="width:auto">' + bOpt(others, others[0][0]) + '</select><button type="button" data-bcopy>Copy setup from</button>' : '') + '</div></form></details>';
+}
+function boardSourceForm(k) {
+  var p = k.pool, o = p.opts || {};
+  var fields = k.fields.map(function (f) {
+    var n = 'opt.' + f.k, v = o[f.k];
+    if (f.type === 'lines') return '<label style="flex-basis:100%">' + esc(f.label) + '<textarea name="' + n + '" rows="3" placeholder="' + esc(f.hint) + '">' + esc(k.text[f.k] || '') + '</textarea><small class="hint">' + esc(f.hint) + '</small></label>';
+    if (f.type === 'select') return '<label>' + esc(f.label) + '<select name="' + n + '">' + bOpt(f.opts, v) + '</select></label>';
+    if (f.type === 'check') return '<label class="narrow">' + esc(f.label) + '<input type="checkbox" name="' + n + '"' + (v ? ' checked' : '') + '></label>';
+    return '<label>' + esc(f.label) + '<input type="' + (f.type === 'number' ? 'number' : 'text') + '" name="' + n + '" value="' + esc(v == null ? '' : v) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + '></label>';
+  }).join('');
+  var st = k.status, stat = st ? (st.error ? '<small class="err full">⚠ ' + esc(st.error) + (st.cards ? ' (showing the last ' + st.cards + ')' : '') + '</small>' : '<small class="hint full">' + st.cards + ' card' + (st.cards === 1 ? '' : 's') + ' now</small>') : '';
+  return '<form class="wg-card" data-board="src" data-kind="' + esc(k.kind) + '"><h4>' + esc(k.label) + ' <span class="pill bty-' + k.type + '">' + k.type + '</span><label class="hsw">On<input type="checkbox" name="enabled"' + (p.enabled ? ' checked' : '') + '></label></h4>' +
+    '<span class="card-desc">' + esc(k.notes) + '</span><div class="wg-fields">' + fields +
+    (k.needsKey ? '<label>API key<input type="password" autocomplete="off" name="key" placeholder="' + (k.key_set ? 'Saved (' + esc(k.key) + ') — blank keeps it' : 'Paste your key') + '"></label>' + (k.key_set ? '<label class="narrow">Remove key<input type="checkbox" name="clear_key"></label>' : '') : '') +
+    '<label class="narrow">Dwell s<input type="number" name="dwell" min="3" value="' + esc(p.dwell || '') + '" placeholder="' + esc(BS.types[k.type].dwell) + '"></label>' +
+    '<label class="narrow">Accent<select name="accent">' + bOpt([['', 'type default']].concat(BS.accents.filter(Boolean).map(function (a) { return [a, a]; })), p.accent || '') + '</select></label>' +
+    '<label class="narrow">Priority<input type="number" name="priority" min="-10" max="10" value="' + esc(p.priority || '') + '" placeholder="0"></label>' +
+    stat + '<div class="form-foot"><button class="primary">Save</button></div></div></form>';
+}
+function boardSave(promise, form, msg) {
+  return promise.then(function (r) { settle(form); toast(msg); load(); return r; }).catch(function (err) { form.setAttribute('data-dirty', '1'); toast(err.message); });
+}
+document.addEventListener('submit', function (e) {
+  var f = e.target, kind = f.dataset && f.dataset.board;
+  if (!kind) return;
+  e.preventDefault();
+  var el = f.elements, val = function (n) { return el[n] ? el[n].value.trim() : undefined; }, chk = function (n) { return !!(el[n] && el[n].checked); };
+  if (kind === 'post') {
+    var body = { text: el.text.value, screen: val('screen'), sticky: chk('sticky'), urgent: chk('urgent') };
+    if (val('ttl_hours')) body.ttl_hours = +val('ttl_hours');
+    return boardSave(api('POST', 'board/message', body), f, 'Posted').then(function (r) { if (r) { el.text.value = ''; el.sticky.checked = el.urgent.checked = false; } });
+  }
+  if (kind === 'screen') {
+    var sc = { enabled: chk('enabled'), tab_after: val('tab_after'), grid: val('grid'), cols: val('cols'), rows: val('rows'), palette: val('palette'), flip: chk('flip'), flip_cap: val('flip_cap'), full: chk('full'), types: {}, weights: {}, sources: {} };
+    B_TYPES.forEach(function (t) { sc.types[t[0]] = chk('type.' + t[0]); });
+    ['personal', 'live', 'scheduled', 'ambient'].forEach(function (t) { sc.weights[t] = val('w.' + t); });
+    BS.kinds.forEach(function (k) { var v = val('src.' + k.kind); sc.sources[k.kind] = { on: v === '' ? null : v === '1' }; });
+    var st = el.static_text.value.trim();
+    sc.sources.static.opts = st ? { items: st } : null;
+    var b = { screens: {} }; b.screens[f.dataset.id] = sc;
+    return boardSave(api('PUT', 'board/config', b), f, 'Flipboard saved');
+  }
+  if (kind === 'src') {
+    var k = BS.kinds.filter(function (x) { return x.kind === f.dataset.kind; })[0], s = { enabled: chk('enabled'), opts: {}, dwell: val('dwell'), accent: val('accent'), priority: val('priority') };
+    k.fields.forEach(function (fd) { var n = 'opt.' + fd.k; if (!el[n]) return; s.opts[fd.k] = fd.type === 'check' ? el[n].checked : fd.type === 'lines' ? el[n].value : el[n].value.trim(); });
+    var body2 = { sources: {} }; body2.sources[k.kind] = s;
+    if (k.needsKey && val('key')) { body2.keys = {}; body2.keys[k.kind] = val('key'); }
+    if (k.needsKey && chk('clear_key')) body2.clear_keys = [k.kind];
+    return boardSave(api('PUT', 'board/config', body2), f, k.label + ' saved');
+  }
+  if (kind === 'types') {
+    var t = {};
+    Array.prototype.forEach.call(f.querySelectorAll('[name*="."]'), function (i) { var p = i.name.split('.'); (t[p[0]] = t[p[0]] || {})[p[1]] = i.value.trim(); });
+    return boardSave(api('PUT', 'board/config', { types: t }), f, 'Card types saved');
+  }
+});
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  if (!t.closest || !t.closest('#main')) return;
+  if (t.dataset.bmsgDel) { settle(t); return api('DELETE', 'board/message/' + t.dataset.bmsgDel).then(function () { toast('Dismissed'); load(); }).catch(function (err) { toast(err.message); }); }
+  if (t.hasAttribute('data-bmsg-clear')) { if (!confirm('Remove every posted Flipboard message?')) return; settle(t); return api('DELETE', 'board/message').then(function () { toast('Cleared'); load(); }).catch(function (err) { toast(err.message); }); }
+  if (t.hasAttribute('data-bcopy')) {
+    var f = t.closest('form'), from = f.elements.copy_from.value;
+    if (!confirm('Replace this Flipboard setup with ' + nameOfScreen(from) + '’s? (Its on/off and tab position stay.)')) return;
+    settle(f); return api('POST', 'board/copy', { from: from, to: f.dataset.id }).then(function () { toast('Copied'); load(); }).catch(function (err) { toast(err.message); });
+  }
+  if (t.hasAttribute('data-btoken-new')) {
+    if (BS.token_set && !confirm('Make a new token? The old one stops working.')) return;
+    return api('POST', 'board/token').then(function (r) {
+      load().then(function () { var o = $('#bTokenOut'); if (o) o.innerHTML = '<p>New token (shown once, copy it now):</p><code class="btok">' + esc(r.token) + '</code>'; });
+    }).catch(function (err) { toast(err.message); });
+  }
+  if (t.hasAttribute('data-btoken-clear')) { if (!confirm('Remove the token? Only the PIN will work.')) return; return api('PUT', 'board/config', { clear_token: true }).then(function () { toast('Token removed'); load(); }).catch(function (err) { toast(err.message); }); }
+});
 var OLD = { approvals: 'today', stars: 'today', notes: 'today', feelings: 'today', rewards: 'chores', routines: 'chores', devices: 'screens', profiles: 'screens',
   ha: 'home', calendars: 'settings/calendars', countdowns: 'settings/countdowns', icons: 'settings/icons', stores: 'settings/shopping', usuals: 'settings/shopping' };
 var SETTINGS_SUB = [['', 'General'], ['calendars', 'Calendars'], ['countdowns', 'Countdowns'], ['icons', 'Picture words'], ['shopping', 'Stores & usuals']];
 function route() {
   var raw = location.hash.replace(/^#\/?/, ''), parts = raw.split('/').map(function (x) { try { return decodeURIComponent(x); } catch (e) { return x; } });
   if (parts[0] === 'rewards' && parts[1]) return { top: 'chores', sub: 'reward', id: parts[1] };
+  if (parts[0] === 'settings' && parts[1] === 'board') { location.replace('#/flipboard'); return null; } // moved out of Settings
   if (OLD[parts[0]] && parts.length === 1) { location.replace('#/' + OLD[parts[0]]); return null; }
   var top = NAV.some(function (n) { return n[0] === parts[0]; }) ? parts[0] : 'today';
   return { top: top, sub: parts[1] || '', id: parts[2] || '' };
 }
+function flipLink() { return '<section id="flipboard-link"><p class="hint" style="margin:0">The split-flap board’s messages, sources and screen setup are under <a href="#/flipboard">Flipboard ›</a></p></section>'; }
 function pageHead(title, hint) { return '<div class="pagehead"><h1>' + title + '</h1>' + (hint ? '<span class="hint" style="margin:0">' + hint + '</span>' : '') + '</div>'; }
 function pageHtml(r) {
   switch (r.top) {
@@ -1325,8 +1525,10 @@ function pageHtml(r) {
     case 'settings':
       var sub = SETTINGS_SUB.some(function (x) { return x[0] === r.sub; }) ? r.sub : '';
       var body = sub === 'calendars' ? table(T('calendars'), 1) : sub === 'countdowns' ? table(T('countdowns'), 1) : sub === 'icons' ? table(T('icons'), 1) :
-        sub === 'shopping' ? table(T('stores')) + table(T('usuals')) : storageSection() + settings();
+        sub === 'shopping' ? table(T('stores')) + table(T('usuals')) : flipLink() + storageSection() + settings();
       return pageHead('Settings') + '<div class="subnav">' + SETTINGS_SUB.map(function (x) { return '<a href="#/settings' + (x[0] ? '/' + x[0] : '') + '"' + (x[0] === sub ? ' class="on"' : '') + '>' + x[1] + '</a>'; }).join('') + '</div>' + body;
+    case 'flipboard':
+      return pageHead('Flipboard', 'The split-flap message board tab: messages, sources and each screen’s setup.') + boardPage();
     default:
       return pageHead('Today') + approvals() + starsSection() + feelingsSection() + notesSection();
   }
@@ -1401,7 +1603,10 @@ window.addEventListener('hashchange', function () { if (S) render(); });
 function load(full) {
   var first = $('#app').hidden || !S;
   return api('GET', 'admin').then(function (s) {
-    S = s; $('#gate').hidden = true; $('#app').hidden = false;
+    S = s;
+    return boardRoute() ? loadBoard() : null; // the Flipboard page has its own state (GET /api/board/admin)
+  }).then(function () {
+    $('#gate').hidden = true; $('#app').hidden = false;
     if (first || full === true) render(); else patch();
   }).catch(function (e) { if (PIN) toast(e.message); });
 }
@@ -1554,10 +1759,11 @@ if (window.EventSource) {
   var es = new EventSource('/api/events'), lt, own = null;
   es.addEventListener('change', function (ev) {
     if (!S || !PIN) return;
-    clearTimeout(lt);
     var d = {}; try { d = JSON.parse(ev.data); } catch (x) {}
+    if (d.topic === 'board') return boardLive(); // a screen's Board grid changed: refresh only the previews
+    clearTimeout(lt);
     own = (own === null ? true : own) && d.client === CLIENT_ID; // a batch is ours only if every event in it is ours
-    lt = setTimeout(function () { var o = own; own = null; api('GET', 'admin').then(function (s) { S = s; patch(o); gridRecount(); }).catch(function () {}); }, 300);
+    lt = setTimeout(function () { var o = own; own = null; api('GET', 'admin').then(function (s) { S = s; return boardRoute() ? loadBoard() : null; }).then(function () { patch(o); gridRecount(); }).catch(function () {}); }, 300);
   });
   // Photo-move progress: refresh quietly (no "changed elsewhere" banner), at most every 1.5 s.
   var stT = null;

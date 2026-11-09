@@ -127,7 +127,7 @@ window.DATA = (function () {
 
   var FIELDS = ['people', 'ALL', 'routines', 'chores', 'stars', 'pendingStars', 'week', 'events', 'stores', 'catOrder',
     'groceries', 'usuals', 'rewards', 'countdowns', 'pendingApprovals', 'weather', 'rooms', 'devices', 'climate',
-    'media', 'cameras', 'scenes', 'connected', 'ha', 'haGroups', 'homeEnabled', 'rewardRequests', 'approvalRequired', 'notes', 'icons', 'learning', 'family', 'quiet', 'soundsOn'];
+    'media', 'cameras', 'scenes', 'connected', 'ha', 'haGroups', 'homeEnabled', 'rewardRequests', 'approvalRequired', 'notes', 'icons', 'learning', 'family', 'quiet', 'soundsOn', 'board'];
   D.reload = function () {
     return fetch('/api/state?device=' + encodeURIComponent(deviceId) + '&name=' + encodeURIComponent(hint), { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -159,8 +159,11 @@ window.DATA = (function () {
   D.scheduleReload = function () { clearTimeout(timer); timer = setTimeout(D.reload, 250); };
   D.reload();
   if (window.EventSource) {
-    var es = new EventSource('/api/events');
-    es.addEventListener('change', D.scheduleReload);
+    var es = D.es = new EventSource('/api/events');
+    es.addEventListener('change', function (e) {
+      var t = ''; try { t = JSON.parse(e.data).topic; } catch (x) {}
+      if (t !== 'board') D.scheduleReload(); // a new Board grid: only the Board view refetches (js/views/board.js)
+    });
     es.addEventListener('hello', D.scheduleReload); // also fires after a reconnect, so we resync
   }
   setInterval(D.reload, 5 * 60 * 1000); // safety net (and picks up the new day's chores)

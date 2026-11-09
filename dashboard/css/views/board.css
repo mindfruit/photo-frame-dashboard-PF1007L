@@ -1,0 +1,39 @@
+/* Board (js/views/board.js): split-flap grid. Sizes and colours come from a generated <style id="board-style">.
+   No CSS grid / custom properties: rows of inline-block cells, so old WebViews lay it out the same way. */
+.view[data-view="board"] { background: #0B0B0A; }
+.bd-wrap { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+.bd { padding: 16px; background: #050505; border: 6px solid #050505; border-radius: 16px; position: relative; }
+.bd-row { white-space: nowrap; font-size: 0; line-height: 0; }
+.bc { display: inline-block; position: relative; vertical-align: top; -webkit-perspective: 500px; perspective: 500px;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; }
+.bh { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; display: block; }
+.bt { top: 0; border-radius: 3px 3px 0 0; }
+.bb { bottom: 0; border-radius: 0 0 3px 3px; }
+.g { position: absolute; left: 0; right: 0; top: 0; display: block; text-align: center; font-style: normal; }
+.bb .g { top: -100%; }
+.bc:after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; margin-top: -1px; background: #000; z-index: 3; }
+.fl { z-index: 2; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.ft { -webkit-transform-origin: 50% 100%; transform-origin: 50% 100%; -webkit-animation: bdTop .14s ease-in both; animation: bdTop .14s ease-in both; }
+.fb { -webkit-transform-origin: 50% 0; transform-origin: 50% 0; -webkit-animation: bdBot .14s ease-out .14s both; animation: bdBot .14s ease-out .14s both; }
+@-webkit-keyframes bdTop { from { -webkit-transform: rotateX(0deg); } to { -webkit-transform: rotateX(-90deg); } }
+@keyframes bdTop { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
+@-webkit-keyframes bdBot { from { -webkit-transform: rotateX(90deg); } to { -webkit-transform: rotateX(0deg); } }
+@keyframes bdBot { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+/* server unreachable: the last grid stays; a small dot says it may be old */
+.bd.is-stale:after { content: ''; position: absolute; right: 8px; bottom: 6px; width: 8px; height: 8px; border-radius: 50%; background: #8A7A62; }
+.bd-off { color: #A8A29A; font-size: 28px; text-align: center; line-height: 1.4; }
+.bd-off small { font-size: 18px; color: #77716A; }
+.stage[data-mode="nightdash"] .view[data-view="board"] { background: #0F0B08; }
+.stage[data-mode="nightdash"] .bd { background: #0A0806; border-color: #0A0806; }
+/* Full screen (html.board-full, set by board.js on the Board tab): all black, no toasts, the rail slides away.
+   A tap on the board adds html.board-peek for 8 s: the rail slides back in over the board. Other tabs never get these. */
+html.board-full, html.board-full body, html.board-full .stage { background: #000; }
+html.board-full .views { grid-column: 1 / span 2; grid-row: 1; }
+html.board-full .rail { position: absolute; top: 0; bottom: 0; left: 0; width: 76px; z-index: 50;
+  -webkit-transform: translateX(-100%); transform: translateX(-100%); -webkit-transition: -webkit-transform .25s ease; transition: transform .25s ease; }
+html.board-full.board-peek .rail { -webkit-transform: none; transform: none; box-shadow: 0 0 24px rgba(0, 0, 0, .6); }
+html.board-full .toasts { display: none; }
+html.board-full .view[data-view="board"], html.board-full .stage[data-mode="nightdash"] .view[data-view="board"] { background: #000; }
+html.board-full .bd, html.board-full .stage[data-mode="nightdash"] .bd { background: #000; }
+html.board-full .bd:not([class*="acc-"]) { border-color: #000; }

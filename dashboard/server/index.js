@@ -12,6 +12,7 @@ import { cache, start, fetchWeather, fetchCalendars, fetchHA, geocode, callHA } 
 import { buildState, ymd, haItems, isSecure, needsApproval, photoKey, linkKey, photoKeys } from './state.js';
 import * as GP from './google-photos.js';
 import * as ST from './storage.js';
+import * as BOARD from './board/index.js';
 import os from 'node:os';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -270,6 +271,7 @@ function serviceFor(x, action, value) {
 function applyProfile(id, p) {
   run('UPDATE devices SET profile_id = ?, tabs = ?, default_tab = ?, kid_lock = ?, quiet_start = ?, quiet_end = ?, dim = ?, theme = ?, night_style = ? WHERE id = ?',
     p.id, p.tabs, p.default_tab, p.kid_lock, p.quiet_start, p.quiet_end, p.dim, THEMES.includes(p.theme) ? p.theme : 'default', NIGHT_STYLES.includes(p.night_style) ? p.night_style : 'dim', id);
+  BOARD.onApplyProfile(id, p.id); // the profile's Board setup, if it has one
 }
 const seen = {};
 function checkin(id, req, name) {
@@ -303,6 +305,7 @@ async function api(req, res, url) {
     const id = url.searchParams.get('device');
     if (id) {
       st.device = checkin(id, req, url.searchParams.get('name'));
+      st.board = BOARD.screenInfo(st.device.id);
       const off = new Set(all('SELECT source_key FROM screen_photo_off WHERE screen_id = ?', st.device.id).map((r) => r.source_key));
       st.photos = st.photos.filter((p) => p.srcs.some((k) => !off.has(k))) // shown if ANY of its sources is on
         .map((p) => (off.has(p.src) ? Object.assign({}, p, { src: p.srcs.filter((k) => !off.has(k))[0] }) : p)); // label with a source this screen shows
@@ -373,6 +376,7 @@ async function api(req, res, url) {
     return;
   }
   if (M === 'GET' && parts[0] === 'health') return send(res, 200, { ok: true, clients: clients.size, errors: cache.errors });
+  if (parts[0] === 'board') return await BOARD.api(req, res, url, parts, body); // split-flap Board (server/board/)
 
   // --- PIN
   if (parts[0] === 'auth') {
@@ -886,4 +890,5 @@ server.listen(PORT, '0.0.0.0', () => {
   start(broadcast);
   ST.startStorage((t) => reqCtx.exit(() => broadcast(t)));
   GP.startGoogle((t) => reqCtx.exit(() => broadcast(t))); // background album work isn’t any tab’s own write
+  BOARD.start({ send, requirePin, HttpError, broadcast });
 });

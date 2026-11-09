@@ -1,0 +1,950 @@
+{
+"source": "World English Bible (WEB), eng-web.usfx.xml from github.com/seven1m/open-bibles",
+"licence": "Public Domain (stated in the file's own preface: \"the World English Bible is in the Public Domain (not copyrighted)\")",
+"verses": [
+{
+"ref": "GENESIS 1:1",
+"text": "In the beginning, God created the heavens and the earth."
+},
+{
+"ref": "GENESIS 1:3",
+"text": "God said, “Let there be light,” and there was light."
+},
+{
+"ref": "EXODUS 14:14",
+"text": "Yahweh will fight for you, and you shall be still.”"
+},
+{
+"ref": "PSALM 9:1",
+"text": "I will give thanks to Yahweh with my whole heart. I will tell of all your marvelous works."
+},
+{
+"ref": "PSALM 19:1",
+"text": "The heavens declare the glory of God. The expanse shows his handiwork."
+},
+{
+"ref": "PSALM 23:1",
+"text": "Yahweh is my shepherd: I shall lack nothing."
+},
+{
+"ref": "PSALM 34:8",
+"text": "Oh taste and see that Yahweh is good. Blessed is the man who takes refuge in him."
+},
+{
+"ref": "PSALM 37:4",
+"text": "Also delight yourself in Yahweh, and he will give you the desires of your heart."
+},
+{
+"ref": "PSALM 46:1",
+"text": "God is our refuge and strength, a very present help in trouble."
+},
+{
+"ref": "PSALM 46:10",
+"text": "“Be still, and know that I am God. I will be exalted among the nations. I will be exalted in the earth.”"
+},
+{
+"ref": "PSALM 55:22",
+"text": "Cast your burden on Yahweh, and he will sustain you. He will never allow the righteous to be moved."
+},
+{
+"ref": "PSALM 56:3",
+"text": "When I am afraid, I will put my trust in you."
+},
+{
+"ref": "PSALM 62:1",
+"text": "My soul rests in God alone. My salvation is from him."
+},
+{
+"ref": "PSALM 86:5",
+"text": "For you, Lord, are good, and ready to forgive; abundant in loving kindness to all those who call on you."
+},
+{
+"ref": "PSALM 90:12",
+"text": "So teach us to count our days, that we may gain a heart of wisdom."
+},
+{
+"ref": "PSALM 91:2",
+"text": "I will say of Yahweh, “He is my refuge and my fortress; my God, in whom I trust.”"
+},
+{
+"ref": "PSALM 100:5",
+"text": "For Yahweh is good. His loving kindness endures forever, his faithfulness to all generations."
+},
+{
+"ref": "PSALM 103:1",
+"text": "Praise Yahweh, my soul! All that is within me, praise his holy name!"
+},
+{
+"ref": "PSALM 107:1",
+"text": "Give thanks to Yahweh, for he is good, for his loving kindness endures forever."
+},
+{
+"ref": "PSALM 118:24",
+"text": "This is the day that Yahweh has made. We will rejoice and be glad in it!"
+},
+{
+"ref": "PSALM 119:105",
+"text": "Your word is a lamp to my feet, and a light for my path."
+},
+{
+"ref": "PSALM 121:1",
+"text": "I will lift up my eyes to the hills. Where does my help come from?"
+},
+{
+"ref": "PSALM 121:2",
+"text": "My help comes from Yahweh, who made heaven and earth."
+},
+{
+"ref": "PSALM 127:3",
+"text": "Behold, children are a heritage of Yahweh. The fruit of the womb is his reward."
+},
+{
+"ref": "PSALM 133:1",
+"text": "See how good and how pleasant it is for brothers to live together in unity!"
+},
+{
+"ref": "PSALM 136:1",
+"text": "Give thanks to Yahweh, for he is good; for his loving kindness endures forever."
+},
+{
+"ref": "PSALM 145:9",
+"text": "Yahweh is good to all. His tender mercies are over all his works."
+},
+{
+"ref": "PSALM 147:3",
+"text": "He heals the broken in heart, and binds up their wounds."
+},
+{
+"ref": "PSALM 150:6",
+"text": "Let everything that has breath praise Yah! Praise Yah!"
+},
+{
+"ref": "ECCLESIASTES 3:1",
+"text": "For everything there is a season, and a time for every purpose under heaven:"
+},
+{
+"ref": "ECCLESIASTES 4:9",
+"text": "Two are better than one, because they have a good reward for their labor."
+},
+{
+"ref": "ISAIAH 40:8",
+"text": "The grass withers, the flower fades; but the word of our God stands forever.”"
+},
+{
+"ref": "ISAIAH 26:3",
+"text": "You will keep whoever’s mind is steadfast in perfect peace, because he trusts in you."
+},
+{
+"ref": "LAMENTATIONS 3:23",
+"text": "They are new every morning. Great is your faithfulness."
+},
+{
+"ref": "MATTHEW 5:9",
+"text": "Blessed are the peacemakers, for they shall be called children of God."
+},
+{
+"ref": "MATTHEW 5:14",
+"text": "You are the light of the world. A city located on a hill can’t be hidden."
+},
+{
+"ref": "MATTHEW 6:21",
+"text": "for where your treasure is, there your heart will be also."
+},
+{
+"ref": "MATTHEW 7:7",
+"text": "“Ask, and it will be given you. Seek, and you will find. Knock, and it will be opened for you."
+},
+{
+"ref": "MATTHEW 11:28",
+"text": "“Come to me, all you who labor and are heavily burdened, and I will give you rest."
+},
+{
+"ref": "MATTHEW 19:26",
+"text": "Looking at them, Jesus said, “With men this is impossible, but with God all things are possible.”"
+},
+{
+"ref": "MATTHEW 22:39",
+"text": "A second likewise is this, ‘You shall love your neighbor as yourself.’"
+},
+{
+"ref": "MARK 9:23",
+"text": "Jesus said to him, “If you can believe, all things are possible to him who believes.”"
+},
+{
+"ref": "LUKE 1:37",
+"text": "For nothing spoken by God is impossible.”"
+},
+{
+"ref": "LUKE 6:31",
+"text": "“As you would like people to do to you, do exactly so to them."
+},
+{
+"ref": "LUKE 6:36",
+"text": "“Therefore be merciful, even as your Father is also merciful."
+},
+{
+"ref": "JOHN 1:5",
+"text": "The light shines in the darkness, and the darkness hasn’t overcome it."
+},
+{
+"ref": "JOHN 15:12",
+"text": "“This is my commandment, that you love one another, even as I have loved you."
+},
+{
+"ref": "ROMANS 12:12",
+"text": "rejoicing in hope; enduring in troubles; continuing steadfastly in prayer;"
+},
+{
+"ref": "ROMANS 12:21",
+"text": "Don’t be overcome by evil, but overcome evil with good."
+},
+{
+"ref": "1 CORINTHIANS 13:4",
+"text": "Love is patient and is kind; love doesn’t envy. Love doesn’t brag, is not proud,"
+},
+{
+"ref": "1 CORINTHIANS 13:13",
+"text": "But now faith, hope, and love remain—these three. The greatest of these is love."
+},
+{
+"ref": "1 CORINTHIANS 16:14",
+"text": "Let all that you do be done in love."
+},
+{
+"ref": "2 CORINTHIANS 5:7",
+"text": "for we walk by faith, not by sight."
+},
+{
+"ref": "GALATIANS 5:22",
+"text": "But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faith,"
+},
+{
+"ref": "GALATIANS 6:2",
+"text": "Bear one another’s burdens, and so fulfill the law of Christ."
+},
+{
+"ref": "GALATIANS 6:9",
+"text": "Let us not be weary in doing good, for we will reap in due season, if we don’t give up."
+},
+{
+"ref": "EPHESIANS 4:2",
+"text": "with all lowliness and humility, with patience, bearing with one another in love;"
+},
+{
+"ref": "PHILIPPIANS 4:4",
+"text": "Rejoice in the Lord always! Again I will say, “Rejoice!”"
+},
+{
+"ref": "PHILIPPIANS 4:13",
+"text": "I can do all things through Christ, who strengthens me."
+},
+{
+"ref": "COLOSSIANS 3:14",
+"text": "Above all these things, walk in love, which is the bond of perfection."
+},
+{
+"ref": "COLOSSIANS 3:23",
+"text": "And whatever you do, work heartily, as for the Lord, and not for men,"
+},
+{
+"ref": "1 THESSALONIANS 5:11",
+"text": "Therefore exhort one another, and build each other up, even as you also do."
+},
+{
+"ref": "1 THESSALONIANS 5:16",
+"text": "Rejoice always."
+},
+{
+"ref": "1 THESSALONIANS 5:17",
+"text": "Pray without ceasing."
+},
+{
+"ref": "1 THESSALONIANS 5:18",
+"text": "In everything give thanks, for this is the will of God in Christ Jesus toward you."
+},
+{
+"ref": "2 TIMOTHY 1:7",
+"text": "For God didn’t give us a spirit of fear, but of power, love, and self-control."
+},
+{
+"ref": "HEBREWS 13:8",
+"text": "Jesus Christ is the same yesterday, today, and forever."
+},
+{
+"ref": "JAMES 1:19",
+"text": "So, then, my beloved brothers, let every man be swift to hear, slow to speak, and slow to anger;"
+},
+{
+"ref": "1 PETER 5:7",
+"text": "casting all your worries on him, because he cares for you."
+},
+{
+"ref": "1 JOHN 4:8",
+"text": "He who doesn’t love doesn’t know God, for God is love."
+},
+{
+"ref": "1 JOHN 4:19",
+"text": "We love him, because he first loved us."
+},
+{
+"ref": "1 JOHN 3:18",
+"text": "My little children, let’s not love in word only, or with the tongue only, but in deed and truth."
+},
+{
+"ref": "PROVERBS 1:6",
+"text": "to understand a proverb, and parables, the words and riddles of the wise."
+},
+{
+"ref": "PROVERBS 1:9",
+"text": "for they will be a garland to grace your head, and chains around your neck."
+},
+{
+"ref": "PROVERBS 1:10",
+"text": "My son, if sinners entice you, don’t consent."
+},
+{
+"ref": "PROVERBS 1:13",
+"text": "We’ll find all valuable wealth. We’ll fill our houses with plunder."
+},
+{
+"ref": "PROVERBS 1:19",
+"text": "So are the ways of everyone who is greedy for gain. It takes away the life of its owners."
+},
+{
+"ref": "PROVERBS 1:20",
+"text": "Wisdom calls aloud in the street. She utters her voice in the public squares."
+},
+{
+"ref": "PROVERBS 1:23",
+"text": "Turn at my reproof. Behold, I will pour out my spirit on you. I will make known my words to you."
+},
+{
+"ref": "PROVERBS 1:29",
+"text": "because they hated knowledge, and didn’t choose the fear of Yahweh."
+},
+{
+"ref": "PROVERBS 1:30",
+"text": "They wanted none of my counsel. They despised all my reproof."
+},
+{
+"ref": "PROVERBS 1:31",
+"text": "Therefore they will eat of the fruit of their own way, and be filled with their own schemes."
+},
+{
+"ref": "PROVERBS 2:5",
+"text": "then you will understand the fear of Yahweh, and find the knowledge of God."
+},
+{
+"ref": "PROVERBS 2:6",
+"text": "For Yahweh gives wisdom. Out of his mouth comes knowledge and understanding."
+},
+{
+"ref": "PROVERBS 2:8",
+"text": "that he may guard the paths of justice, and preserve the way of his saints."
+},
+{
+"ref": "PROVERBS 2:9",
+"text": "Then you will understand righteousness and justice, equity and every good path."
+},
+{
+"ref": "PROVERBS 2:10",
+"text": "For wisdom will enter into your heart. Knowledge will be pleasant to your soul."
+},
+{
+"ref": "PROVERBS 2:20",
+"text": "that you may walk in the way of good men, and keep the paths of the righteous."
+},
+{
+"ref": "PROVERBS 2:21",
+"text": "For the upright will dwell in the land. The perfect will remain in it."
+},
+{
+"ref": "PROVERBS 3:2",
+"text": "for length of days, and years of life, and peace, will they add to you."
+},
+{
+"ref": "PROVERBS 3:4",
+"text": "So you will find favor, and good understanding in the sight of God and man."
+},
+{
+"ref": "PROVERBS 3:5",
+"text": "Trust in Yahweh with all your heart, and don’t lean on your own understanding."
+},
+{
+"ref": "PROVERBS 3:6",
+"text": "In all your ways acknowledge him, and he will make your paths straight."
+},
+{
+"ref": "PROVERBS 3:7",
+"text": "Don’t be wise in your own eyes. Fear Yahweh, and depart from evil."
+},
+{
+"ref": "PROVERBS 3:8",
+"text": "It will be health to your body, and nourishment to your bones."
+},
+{
+"ref": "PROVERBS 3:10",
+"text": "so your barns will be filled with plenty, and your vats will overflow with new wine."
+},
+{
+"ref": "PROVERBS 3:12",
+"text": "for whom Yahweh loves, he reproves; even as a father reproves the son in whom he delights."
+},
+{
+"ref": "PROVERBS 3:13",
+"text": "Happy is the man who finds wisdom, the man who gets understanding."
+},
+{
+"ref": "PROVERBS 3:14",
+"text": "For her good profit is better than getting silver, and her return is better than fine gold."
+},
+{
+"ref": "PROVERBS 3:15",
+"text": "She is more precious than rubies. None of the things you can desire are to be compared to her."
+},
+{
+"ref": "PROVERBS 3:16",
+"text": "Length of days is in her right hand. In her left hand are riches and honor."
+},
+{
+"ref": "PROVERBS 3:17",
+"text": "Her ways are ways of pleasantness. All her paths are peace."
+},
+{
+"ref": "PROVERBS 3:18",
+"text": "She is a tree of life to those who lay hold of her. Happy is everyone who retains her."
+},
+{
+"ref": "PROVERBS 3:19",
+"text": "By wisdom Yahweh founded the earth. By understanding, he established the heavens."
+},
+{
+"ref": "PROVERBS 3:20",
+"text": "By his knowledge, the depths were broken up, and the skies drop down the dew."
+},
+{
+"ref": "PROVERBS 3:22",
+"text": "so they will be life to your soul, and grace for your neck."
+},
+{
+"ref": "PROVERBS 3:23",
+"text": "Then you shall walk in your way securely. Your foot won’t stumble."
+},
+{
+"ref": "PROVERBS 3:24",
+"text": "When you lie down, you will not be afraid. Yes, you will lie down, and your sleep will be sweet."
+},
+{
+"ref": "PROVERBS 3:26",
+"text": "for Yahweh will be your confidence, and will keep your foot from being taken."
+},
+{
+"ref": "PROVERBS 3:27",
+"text": "Don’t withhold good from those to whom it is due, when it is in the power of your hand to do it."
+},
+{
+"ref": "PROVERBS 3:29",
+"text": "Don’t devise evil against your neighbor, since he dwells securely by you."
+},
+{
+"ref": "PROVERBS 3:30",
+"text": "Don’t strive with a man without cause, if he has done you no harm."
+},
+{
+"ref": "PROVERBS 3:31",
+"text": "Don’t envy the man of violence. Choose none of his ways."
+},
+{
+"ref": "PROVERBS 3:34",
+"text": "Surely he mocks the mockers, but he gives grace to the humble."
+},
+{
+"ref": "PROVERBS 4:2",
+"text": "for I give you sound learning. Don’t forsake my law."
+},
+{
+"ref": "PROVERBS 4:3",
+"text": "For I was a son to my father, tender and an only child in the sight of my mother."
+},
+{
+"ref": "PROVERBS 4:4",
+"text": "He taught me, and said to me: “Let your heart retain my words. Keep my commandments, and live."
+},
+{
+"ref": "PROVERBS 4:5",
+"text": "Get wisdom. Get understanding. Don’t forget, and don’t deviate from the words of my mouth."
+},
+{
+"ref": "PROVERBS 4:6",
+"text": "Don’t forsake her, and she will preserve you. Love her, and she will keep you."
+},
+{
+"ref": "PROVERBS 4:7",
+"text": "Wisdom is supreme. Get wisdom. Yes, though it costs all your possessions, get understanding."
+},
+{
+"ref": "PROVERBS 4:8",
+"text": "Esteem her, and she will exalt you. She will bring you to honor, when you embrace her."
+},
+{
+"ref": "PROVERBS 4:10",
+"text": "Listen, my son, and receive my sayings. The years of your life will be many."
+},
+{
+"ref": "PROVERBS 4:11",
+"text": "I have taught you in the way of wisdom. I have led you in straight paths."
+},
+{
+"ref": "PROVERBS 4:12",
+"text": "When you go, your steps will not be hampered. When you run, you will not stumble."
+},
+{
+"ref": "PROVERBS 4:13",
+"text": "Take firm hold of instruction. Don’t let her go. Keep her, for she is your life."
+},
+{
+"ref": "PROVERBS 4:15",
+"text": "Avoid it, and don’t pass by it. Turn from it, and pass on."
+},
+{
+"ref": "PROVERBS 4:16",
+"text": "For they don’t sleep, unless they do evil. Their sleep is taken away, unless they make someone fall."
+},
+{
+"ref": "PROVERBS 4:20",
+"text": "My son, attend to my words. Turn your ear to my sayings."
+},
+{
+"ref": "PROVERBS 4:21",
+"text": "Let them not depart from your eyes. Keep them in the center of your heart."
+},
+{
+"ref": "PROVERBS 4:22",
+"text": "For they are life to those who find them, and health to their whole body."
+},
+{
+"ref": "PROVERBS 4:23",
+"text": "Keep your heart with all diligence, for out of it is the wellspring of life."
+},
+{
+"ref": "PROVERBS 4:24",
+"text": "Put away from yourself a perverse mouth. Put corrupt lips far from you."
+},
+{
+"ref": "PROVERBS 4:25",
+"text": "Let your eyes look straight ahead. Fix your gaze directly before you."
+},
+{
+"ref": "PROVERBS 4:26",
+"text": "Make the path of your feet level. Let all of your ways be established."
+},
+{
+"ref": "PROVERBS 4:27",
+"text": "Don’t turn to the right hand nor to the left. Remove your foot from evil."
+},
+{
+"ref": "PROVERBS 5:2",
+"text": "that you may maintain discretion, that your lips may preserve knowledge."
+},
+{
+"ref": "PROVERBS 5:4",
+"text": "but in the end she is as bitter as wormwood, and as sharp as a two-edged sword."
+},
+{
+"ref": "PROVERBS 5:6",
+"text": "She gives no thought to the way of life. Her ways are crooked, and she doesn’t know it."
+},
+{
+"ref": "PROVERBS 5:7",
+"text": "Now therefore, my sons, listen to me. Don’t depart from the words of my mouth."
+},
+{
+"ref": "PROVERBS 5:10",
+"text": "lest strangers feast on your wealth, and your labors enrich another man’s house."
+},
+{
+"ref": "PROVERBS 5:13",
+"text": "neither have I obeyed the voice of my teachers, nor turned my ear to those who instructed me!"
+},
+{
+"ref": "PROVERBS 5:15",
+"text": "Drink water out of your own cistern, running water out of your own well."
+},
+{
+"ref": "PROVERBS 5:16",
+"text": "Should your springs overflow in the streets, streams of water in the public squares?"
+},
+{
+"ref": "PROVERBS 5:17",
+"text": "Let them be for yourself alone, not for strangers with you."
+},
+{
+"ref": "PROVERBS 5:18",
+"text": "Let your spring be blessed. Rejoice in the wife of your youth."
+},
+{
+"ref": "PROVERBS 5:21",
+"text": "For the ways of man are before Yahweh’s eyes. He examines all his paths."
+},
+{
+"ref": "PROVERBS 6:2",
+"text": "You are trapped by the words of your mouth. You are ensnared with the words of your mouth."
+},
+{
+"ref": "PROVERBS 6:4",
+"text": "Give no sleep to your eyes, nor slumber to your eyelids."
+},
+{
+"ref": "PROVERBS 6:5",
+"text": "Free yourself, like a gazelle from the hand of the hunter, like a bird from the snare of the fowler."
+},
+{
+"ref": "PROVERBS 6:8",
+"text": "provides her bread in the summer, and gathers her food in the harvest."
+},
+{
+"ref": "PROVERBS 6:9",
+"text": "How long will you sleep, sluggard? When will you arise out of your sleep?"
+},
+{
+"ref": "PROVERBS 6:11",
+"text": "so your poverty will come as a robber, and your scarcity as an armed man."
+},
+{
+"ref": "PROVERBS 6:14",
+"text": "in whose heart is perverseness, who devises evil continually, who always sows discord."
+},
+{
+"ref": "PROVERBS 6:15",
+"text": "Therefore his calamity will come suddenly. He will be broken suddenly, and that without remedy."
+},
+{
+"ref": "PROVERBS 6:19",
+"text": "a false witness who utters lies, and he who sows discord among brothers."
+},
+{
+"ref": "PROVERBS 6:20",
+"text": "My son, keep your father’s commandment, and don’t forsake your mother’s teaching."
+},
+{
+"ref": "PROVERBS 6:21",
+"text": "Bind them continually on your heart. Tie them around your neck."
+},
+{
+"ref": "PROVERBS 6:24",
+"text": "to keep you from the immoral woman, from the flattery of the wayward wife’s tongue."
+},
+{
+"ref": "PROVERBS 6:25",
+"text": "Don’t lust after her beauty in your heart, neither let her captivate you with her eyelids."
+},
+{
+"ref": "PROVERBS 6:27",
+"text": "Can a man scoop fire into his lap, and his clothes not be burned?"
+},
+{
+"ref": "PROVERBS 6:28",
+"text": "Or can one walk on hot coals, and his feet not be scorched?"
+},
+{
+"ref": "PROVERBS 6:29",
+"text": "So is he who goes in to his neighbor’s wife. Whoever touches her will not be unpunished."
+},
+{
+"ref": "PROVERBS 6:31",
+"text": "but if he is found, he shall restore seven times. He shall give all the wealth of his house."
+},
+{
+"ref": "PROVERBS 6:33",
+"text": "He will get wounds and dishonor. His reproach will not be wiped away."
+},
+{
+"ref": "PROVERBS 6:34",
+"text": "For jealousy arouses the fury of the husband. He won’t spare in the day of vengeance."
+},
+{
+"ref": "PROVERBS 6:35",
+"text": "He won’t regard any ransom, neither will he rest content, though you give many gifts."
+},
+{
+"ref": "PROVERBS 7:1",
+"text": "My son, keep my words. Lay up my commandments within you."
+},
+{
+"ref": "PROVERBS 7:2",
+"text": "Keep my commandments and live! Guard my teaching as the apple of your eye."
+},
+{
+"ref": "PROVERBS 7:3",
+"text": "Bind them on your fingers. Write them on the tablet of your heart."
+},
+{
+"ref": "PROVERBS 7:6",
+"text": "For at the window of my house, I looked out through my lattice."
+},
+{
+"ref": "PROVERBS 7:9",
+"text": "in the twilight, in the evening of the day, in the middle of the night and in the darkness."
+},
+{
+"ref": "PROVERBS 7:11",
+"text": "She is loud and defiant. Her feet don’t stay in her house."
+},
+{
+"ref": "PROVERBS 7:12",
+"text": "Now she is in the streets, now in the squares, and lurking at every corner."
+},
+{
+"ref": "PROVERBS 7:14",
+"text": "“Sacrifices of peace offerings are with me. Today I have paid my vows."
+},
+{
+"ref": "PROVERBS 7:15",
+"text": "Therefore I came out to meet you, to diligently seek your face, and I have found you."
+},
+{
+"ref": "PROVERBS 7:16",
+"text": "I have spread my couch with carpets of tapestry, with striped cloths of the yarn of Egypt."
+},
+{
+"ref": "PROVERBS 7:17",
+"text": "I have perfumed my bed with myrrh, aloes, and cinnamon."
+},
+{
+"ref": "PROVERBS 7:18",
+"text": "Come, let’s take our fill of loving until the morning. Let’s solace ourselves with loving."
+},
+{
+"ref": "PROVERBS 7:19",
+"text": "For my husband isn’t at home. He has gone on a long journey."
+},
+{
+"ref": "PROVERBS 7:21",
+"text": "With persuasive words, she led him astray. With the flattering of her lips, she seduced him."
+},
+{
+"ref": "PROVERBS 7:24",
+"text": "Now therefore, sons, listen to me. Pay attention to the words of my mouth."
+},
+{
+"ref": "PROVERBS 8:1",
+"text": "Doesn’t wisdom cry out? Doesn’t understanding raise her voice?"
+},
+{
+"ref": "PROVERBS 8:2",
+"text": "On the top of high places by the way, where the paths meet, she stands."
+},
+{
+"ref": "PROVERBS 8:4",
+"text": "“To you men, I call! I send my voice to the sons of mankind."
+},
+{
+"ref": "PROVERBS 8:6",
+"text": "Hear, for I will speak excellent things. The opening of my lips is for right things."
+},
+{
+"ref": "PROVERBS 8:8",
+"text": "All the words of my mouth are in righteousness. There is nothing crooked or perverse in them."
+},
+{
+"ref": "PROVERBS 8:9",
+"text": "They are all plain to him who understands, right to those who find knowledge."
+},
+{
+"ref": "PROVERBS 8:10",
+"text": "Receive my instruction rather than silver; knowledge rather than choice gold."
+},
+{
+"ref": "PROVERBS 8:11",
+"text": "For wisdom is better than rubies. All the things that may be desired can’t be compared to it."
+},
+{
+"ref": "PROVERBS 8:12",
+"text": "“I, wisdom, have made prudence my dwelling. Find out knowledge and discretion."
+},
+{
+"ref": "PROVERBS 8:13",
+"text": "The fear of Yahweh is to hate evil. I hate pride, arrogance, the evil way, and the perverse mouth."
+},
+{
+"ref": "PROVERBS 8:14",
+"text": "Counsel and sound knowledge are mine. I have understanding and power."
+},
+{
+"ref": "PROVERBS 8:15",
+"text": "By me kings reign, and princes decree justice."
+},
+{
+"ref": "PROVERBS 8:16",
+"text": "By me princes rule; nobles, and all the righteous rulers of the earth."
+},
+{
+"ref": "PROVERBS 8:17",
+"text": "I love those who love me. Those who seek me diligently will find me."
+},
+{
+"ref": "PROVERBS 8:18",
+"text": "With me are riches, honor, enduring wealth, and prosperity."
+},
+{
+"ref": "PROVERBS 8:19",
+"text": "My fruit is better than gold, yes, than fine gold; my yield than choice silver."
+},
+{
+"ref": "PROVERBS 8:21",
+"text": "that I may give wealth to those who love me. I fill their treasuries."
+},
+{
+"ref": "PROVERBS 8:22",
+"text": "“Yahweh possessed me in the beginning of his work, before his deeds of old."
+},
+{
+"ref": "PROVERBS 8:23",
+"text": "I was set up from everlasting, from the beginning, before the earth existed."
+},
+{
+"ref": "PROVERBS 8:24",
+"text": "When there were no depths, I was born, when there were no springs abounding with water."
+},
+{
+"ref": "PROVERBS 8:26",
+"text": "while as yet he had not made the earth, nor the fields, nor the beginning of the dust of the world."
+},
+{
+"ref": "PROVERBS 8:31",
+"text": "rejoicing in his whole world. My delight was with the sons of men."
+},
+{
+"ref": "PROVERBS 8:32",
+"text": "“Now therefore, my sons, listen to me, for blessed are those who keep my ways."
+},
+{
+"ref": "PROVERBS 8:33",
+"text": "Hear instruction, and be wise. Don’t refuse it."
+},
+{
+"ref": "PROVERBS 8:34",
+"text": "Blessed is the man who hears me, watching daily at my gates, waiting at my door posts."
+},
+{
+"ref": "PROVERBS 8:35",
+"text": "For whoever finds me, finds life, and will obtain favor from Yahweh."
+},
+{
+"ref": "PROVERBS 9:1",
+"text": "Wisdom has built her house. She has carved out her seven pillars."
+},
+{
+"ref": "PROVERBS 9:2",
+"text": "She has prepared her meat. She has mixed her wine. She has also set her table."
+},
+{
+"ref": "PROVERBS 9:5",
+"text": "“Come, eat some of my bread, Drink some of the wine which I have mixed!"
+},
+{
+"ref": "PROVERBS 9:8",
+"text": "Don’t reprove a scoffer, lest he hate you. Reprove a wise man, and he will love you."
+},
+{
+"ref": "PROVERBS 9:10",
+"text": "The fear of Yahweh is the beginning of wisdom. The knowledge of the Holy One is understanding."
+},
+{
+"ref": "PROVERBS 9:11",
+"text": "For by me your days will be multiplied. The years of your life will be increased."
+},
+{
+"ref": "PROVERBS 9:12",
+"text": "If you are wise, you are wise for yourself. If you mock, you alone will bear it."
+},
+{
+"ref": "PROVERBS 10:4",
+"text": "He becomes poor who works with a lazy hand, but the hand of the diligent brings wealth."
+},
+{
+"ref": "PROVERBS 10:9",
+"text": "He who walks blamelessly walks surely, but he who perverts his ways will be found out."
+},
+{
+"ref": "PROVERBS 10:12",
+"text": "Hatred stirs up strife, but love covers all wrongs."
+},
+{
+"ref": "PROVERBS 10:17",
+"text": "He is in the way of life who heeds correction, but he who forsakes reproof leads others astray."
+},
+{
+"ref": "PROVERBS 10:22",
+"text": "Yahweh’s blessing brings wealth, and he adds no trouble to it."
+},
+{
+"ref": "PROVERBS 10:26",
+"text": "As vinegar to the teeth, and as smoke to the eyes, so is the sluggard to those who send him."
+},
+{
+"ref": "PROVERBS 10:31",
+"text": "The mouth of the righteous produces wisdom, but the perverse tongue will be cut off."
+},
+{
+"ref": "PROVERBS 11:2",
+"text": "When pride comes, then comes shame, but with humility comes wisdom."
+},
+{
+"ref": "PROVERBS 11:12",
+"text": "One who despises his neighbor is void of wisdom, but a man of understanding holds his peace."
+},
+{
+"ref": "PROVERBS 11:16",
+"text": "A gracious woman obtains honor, but violent men obtain riches."
+},
+{
+"ref": "PROVERBS 11:17",
+"text": "The merciful man does good to his own soul, but he who is cruel troubles his own flesh."
+},
+{
+"ref": "PROVERBS 11:22",
+"text": "Like a gold ring in a pig’s snout, is a beautiful woman who lacks discretion."
+},
+{
+"ref": "PROVERBS 11:25",
+"text": "The liberal soul shall be made fat. He who waters shall be watered also himself."
+},
+{
+"ref": "PROVERBS 11:27",
+"text": "He who diligently seeks good seeks favor, but he who searches after evil, it shall come to him."
+},
+{
+"ref": "PROVERBS 11:28",
+"text": "He who trusts in his riches will fall, but the righteous shall flourish as the green leaf."
+},
+{
+"ref": "PROVERBS 11:30",
+"text": "The fruit of the righteous is a tree of life. He who is wise wins souls."
+},
+{
+"ref": "PROVERBS 12:1",
+"text": "Whoever loves correction loves knowledge, but he who hates reproof is stupid."
+},
+{
+"ref": "PROVERBS 12:4",
+"text": "A worthy woman is the crown of her husband, but a disgraceful wife is as rottenness in his bones."
+},
+{
+"ref": "PROVERBS 12:8",
+"text": "A man shall be commended according to his wisdom, but he who has a warped mind shall be despised."
+},
+{
+"ref": "PROVERBS 12:9",
+"text": "Better is he who is little know, and has a servant, than he who honors himself, and lacks bread."
+},
+{
+"ref": "PROVERBS 12:13",
+"text": "An evil man is trapped by sinfulness of lips, but the righteous shall come out of trouble."
+},
+{
+"ref": "PROVERBS 12:17",
+"text": "He who is truthful testifies honestly, but a false witness lies."
+}
+]
+}

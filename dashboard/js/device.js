@@ -21,10 +21,10 @@
     var all = buttons.map(function (b) { return b.dataset.go; });
     var want = dev && dev.tabs && dev.tabs.length ? resolve(dev.tabs).filter(function (t) { return all.indexOf(t) > -1; }) : all;
     if (!want.length) want = ['home'];
-    // order + visibility (the Home-control tab also needs Home Assistant devices picked)
+    // order + visibility (the Home-control tab also needs Home Assistant devices picked, the Board tab admin › Flipboard)
     buttons.forEach(function (b) {
       var i = want.indexOf(b.dataset.go);
-      b.hidden = i < 0 || (b.dataset.go === 'control' && !D.homeEnabled);
+      b.hidden = i < 0 || (b.dataset.go === 'control' && !D.homeEnabled) || (b.dataset.go === 'board' && !(D.board && D.board.enabled));
     });
     want.forEach(function (t) { var b = rail.querySelector('[data-go="' + t + '"]'); if (b) rail.insertBefore(b, clock); });
 

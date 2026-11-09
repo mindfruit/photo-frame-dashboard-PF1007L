@@ -335,6 +335,8 @@
     if (App.mode === 'nightdash' && idleSec >= 20) { App.setMode('night'); return; }
     if (App.mode === 'day' && !blocked && idleSec >= 30 && App.isQuiet()) { App.closeSheet(); App.go(App.homeTab || 'home'); App.setMode('night'); App.nightBy = 'quiet'; return; }
     if (App.mode !== 'day' || blocked) return;
+    var cur = App.views[App.current];
+    if (cur && cur.stay && cur.stay()) return; // a full-screen Board stays up (quiet hours above still dim it)
     if (idleSec === App.idle.home && App.current !== (App.homeTab || 'home')) { App.closeSheet(); App.go(App.homeTab || 'home'); }
     if (idleSec >= App.idle.ambient) {
       App.closeSheet();
@@ -358,10 +360,16 @@
   App.resetIdle = function () { idleSec = 0; };
 
   // ------------------------------------------------------------ stage scaling (desktop preview only)
+  // Full-screen Board (html.board-full): the stage grows to the viewport's shape so the board can use all of it.
   function fit() {
-    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
-    $('#stage').style.transform = Math.abs(s - 1) < 0.01 ? '' : 'scale(' + s + ')';
+    var vw = window.innerWidth, vh = window.innerHeight, s = Math.min(vw / 1280, vh / 800), st = $('#stage').style;
+    if (document.documentElement.classList.contains('board-full')) {
+      var w = Math.round(vw / s), h = Math.round(vh / s);
+      st.width = w + 'px'; st.height = h + 'px'; st.margin = Math.round(-h / 2) + 'px 0 0 ' + Math.round(-w / 2) + 'px';
+    } else { st.width = ''; st.height = ''; st.margin = ''; }
+    st.transform = Math.abs(s - 1) < 0.01 ? '' : 'scale(' + s + ')';
   }
+  App.fit = fit;
 
   // ------------------------------------------------------------ clock tick
   var lastMin = -1;

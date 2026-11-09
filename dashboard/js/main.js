@@ -13,6 +13,7 @@ import './views/photos.js';
 import './views/control.js';
 import './views/agents.js';
 import './views/person.js';
+import './views/board.js';
 import './device.js';
 import './views/ambient.js';
 import './diag.js';
