@@ -68,6 +68,123 @@ built without Gradle, that shows it. Hold two fingers still for 1.5 s to open a 
 launcher, Android settings, and reloading. On frames without system navigation, optional floating
 **Back** and **Dashboard** buttons help; see the [kiosk guide](dashboard/kiosk/README.md).
 
+## Hosting / moving to another machine
+
+Run the family dashboard from [`dashboard/`](dashboard) on a always-on Mac (this machine today,
+or a Mac mini later). Production is the Node server on port **3030** serving the Vite build —
+not the Vite dev server.
+
+### Requirements
+
+- **Node 20** (tested on v20.19). No Docker.
+- On Node &lt; 22.5 the optional dependency `better-sqlite3` provides SQLite; on Node ≥ 22.5 the
+  server prefers built-in `node:sqlite` and falls back to `better-sqlite3` if needed
+  (`dashboard/server/db.js`).
+- After `npm ci` on a new machine/arch, rebuild the native module:
+  `npm rebuild better-sqlite3`.
+
+### Production run (no Vite)
+
+```sh
+cd dashboard
+npm ci
+npm rebuild better-sqlite3   # needed on a new host / after Node upgrades
+npm run build                # vite build → dashboard/dist/
+PORT=3030 node server/index.js
+# or: npm run start          # build then node server/index.js
+# or: npm run server         # node server/index.js only (expects dist/ already built)
+```
+
+The server listens on `0.0.0.0:${PORT||3030}`, serves `dashboard/dist/` as the static site,
+`/admin` as the parent page, `/api/*`, and `/photos/*`. Do **not** run `npm run dev` /
+`npm run dev:all` on the hosting machine for day-to-day use — those start Vite on :5173 and
+proxy to :3030; frames should hit **:3030** directly.
+
+### What to copy
+
+| Item | Path / how | Notes |
+| --- | --- | --- |
+| Database | `dashboard/server/data.db` | Stop the server first, then WAL-checkpoint (`PRAGMA wal_checkpoint(TRUNCATE);`) so `-wal`/`-shm` are flushed into `data.db`. Override path with env `DB_FILE` if you use one. |
+| Env | `dashboard/server/.env` | Optional. Loaded only for keys not already in the process env. Known keys used here: `CAL_*` (secret iCal URLs imported once), `HOME_ASSISTANT_URL`, `HOME_ASSISTANT_TOKEN`, plus optional `PORT`, `PHOTOS_DIR`, `DB_FILE`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TZ`, `GP_*`. **Never commit `.env`.** |
+| Photos | `dashboard/server/photos/` by default | Folder resolution: env `PHOTOS_DIR` (wins) → admin setting `photos_dir` → `server/photos` (`dashboard/server/storage.js`). Copy the folder that is actually in use. |
+| Kiosk signing keystore | `~/.android/debug.keystore` | `dashboard/kiosk/build.sh` signs with this path. Copy it only if you want APK upgrades to keep the same signature on the new host; otherwise a fresh debug keystore is fine and you reinstall the APK. |
+
+HA URL + token also live in SQLite settings (`ha_url` / `ha_token`) when configured in Admin.
+Google OAuth client id/secret may be in `.env` **or** in settings (`google_client_id` /
+`google_client_secret`). Either side is enough as long as one of them is set on the new host.
+
+### LaunchAgent (auto-start on login)
+
+Template: [`dashboard/scripts/com.mindfruit.photoframe.plist.template`](dashboard/scripts/com.mindfruit.photoframe.plist.template).
+
+1. Copy to `~/Library/LaunchAgents/com.mindfruit.photoframe.plist`.
+2. Replace `__WORKING_DIRECTORY__` with the absolute path to `…/dashboard` on the new host,
+   and `__NODE__` with `$(which node)` (nvm/Homebrew path).
+3. Logs go to `~/Library/Logs/photoframe.out.log` and `photoframe.err.log` (edit in the plist).
+4. Load: `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.mindfruit.photoframe.plist`
+   (or `launchctl load` on older macOS). Unload before migrating again.
+
+`KeepAlive` + `RunAtLoad` keep the server up after login/reboot.
+
+### Fixed LAN IP
+
+Give the host a DHCP reservation in eero (or your router) so frames keep a stable
+`http://<ip>:3030/` URL. Note the reserved IP before you move hardware.
+
+### Repointing frames
+
+Kiosk saved URL is in the app’s SharedPreferences; compile-time fallback is
+`MainActivity.DEFAULT_URL` (currently a Vite `:5173` URL in source — change it before a
+release build if you want a sensible default).
+
+On a frame with ADB:
+
+```sh
+adb shell am start -a android.intent.action.VIEW \
+  -d 'http://<new-ip>:3030/?device=frameo' \
+  -n com.wesbos.homehq/.MainActivity
+```
+
+Or use the kiosk two-finger menu → change dashboard URL. Prefer `?device=NAME` so Admin →
+Screens keeps the same screen profile.
+
+### Google Photos picker OAuth
+
+`redirectUri()` in `dashboard/server/google-photos.js` is hard-coded as:
+
+`http://localhost:${PORT||3030}/api/google/callback`
+
+So **Connect Google** must be completed in a browser **on the server host** (localhost). If
+you change host name or port, update the authorized redirect URI in the Google Cloud OAuth
+client to match, and update any saved client id/secret.
+
+### Home Assistant
+
+HA base URL + long-lived token are stored in settings (and/or `.env` as
+`HOME_ASSISTANT_URL` / `HOME_ASSISTANT_TOKEN`). Moving the dashboard host does **not** change
+the HA URL if HA stays on the same machine/URL. Re-test Admin → Home Assistant after the move.
+
+### Backups
+
+- Copy `data.db` after a checkpoint (or `sqlite3 data.db ".backup backup.db"`).
+- Copy the photos directory (thousands of files).
+- Keep `.env` somewhere safe offline; it is gitignored.
+
+### Migrate script
+
+[`dashboard/scripts/migrate-host.sh`](dashboard/scripts/migrate-host.sh) stops the local :3030
+listener, checkpoints SQLite, and `rsync`s the repo + `data.db` + `.env` + photos to
+`user@host` with checksum verify. It never uses `--delete`. Example:
+
+```sh
+cd dashboard
+./scripts/migrate-host.sh --dry-run you@mac-mini.local
+./scripts/migrate-host.sh you@mac-mini.local ~/Projects/photo-frame-dashboard-PF1007L
+```
+
+Then on the remote: `npm ci && npm rebuild better-sqlite3 && npm run build`, install the
+LaunchAgent, reserve the IP, repoint frames, and re-do Google Connect in a local browser if needed.
+
 ## For agents: start here
 
 You are probably helping someone with a similar device plugged into a Mac over USB. Read this

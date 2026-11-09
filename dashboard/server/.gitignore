@@ -1,0 +1,6 @@
+.env
+*.db
+photos/
+*.db-wal
+*.db-shm
+*.bak

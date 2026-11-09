@@ -14,3 +14,6 @@ __pycache__/
 *.HEIC
 *.heic
 scripts/si006-webview-overlay/build/
+
+# Local staging / scratch for dashboard work
+/pf-stage/

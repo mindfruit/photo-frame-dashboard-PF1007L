@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mindfruit.photoframe</string>
+  <key>WorkingDirectory</key>
+  <string>__WORKING_DIRECTORY__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__NODE__</string>
+    <string>server/index.js</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PORT</key>
+    <string>3030</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/__USER__/Library/Logs/photoframe.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/__USER__/Library/Logs/photoframe.err.log</string>
+</dict>
+</plist>
