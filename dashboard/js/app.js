@@ -24,7 +24,19 @@
   App.dayStart = function (d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
   App.addDays = function (d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; };
   App.sameDay = function (a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); };
-  App.isNight = function () { var h = App.now().getHours(); return h >= 22 || h < 6; };
+  // Quiet hours come from the parent page (Settings); default 10 PM – 6 AM.
+  App.isQuiet = function () {
+    var q = (window.DATA && window.DATA.quiet) || {};
+    if (!q.start || !q.end) return false;
+    var n = App.now(), m = n.getHours() * 60 + n.getMinutes();
+    var s = +q.start.slice(0, 2) * 60 + +q.start.slice(3), e = +q.end.slice(0, 2) * 60 + +q.end.slice(3);
+    return s > e ? (m >= s || m < e) : (m >= s && m < e);
+  };
+  App.isNight = function () {
+    var q = (window.DATA && window.DATA.quiet) || {};
+    if (q.start && q.end) return App.isQuiet();
+    var h = App.now().getHours(); return h >= 22 || h < 6;
+  };
 
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -75,14 +87,36 @@
     for (var i = 0; i < D.people.length; i++) if (D.people[i].id === id) return D.people[i];
     return D.family;
   };
+  // WCAG contrast of two #rrggbb colours
+  function lum(hex) {
+    var n = parseInt(String(hex).replace('#', ''), 16) || 0;
+    return [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); })
+      .reduce(function (s, v, i) { return s + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+  function contrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  App.contrast = contrast;
+  var paperInk = {}, nightC = {};
+  // The person colour for the Dim night dashboard (css/night.css): mixed into the night background (#15110D) as far as
+  // the night ink (#C2A780) still reads on it at 4.6:1 (fills), and halfway to the ink for text on the dark page.
+  function hex(c) { return '#' + c.map(function (v) { v = Math.round(v); return (v < 16 ? '0' : '') + v.toString(16); }).join(''); }
+  function nightOf(c) {
+    if (nightC[c]) return nightC[c];
+    var bg = [21, 17, 13], ink = [194, 167, 128], m = /^#([0-9a-f]{6})$/i.exec(c);
+    if (!m || lum(c) < 0.03) return (nightC[c] = { c: '#3A2E22', t: '#C2A780' }); // ink-like colours (Family) = the night "selected" fill
+    var rgb = [0, 2, 4].map(function (i) { return parseInt(m[1].substr(i, 2), 16); }), mix = function (a, b, k) { return hex(a.map(function (v, i) { return v * k + b[i] * (1 - k); })); };
+    var k = 0.5; while (k > 0.15 && contrast(mix(rgb, bg, k), '#C2A780') < 4.6) k -= 0.05;
+    return (nightC[c] = { c: mix(rgb, bg, k), t: mix(rgb, ink, 0.5) });
+  }
   App.pstyle = function (p) {
     if (typeof p === 'string') p = App.person(p);
-    return '--c:' + p.color + ';--c-rgb:' + p.rgb + ';--c-ink:' + p.ink;
+    // --c-ink-p: the paper theme's text on the person colour, paper ink or white, whichever reads better (css/themes/paper.css)
+    var c = p.color, pi = paperInk[c] || (paperInk[c] = /^#[0-9a-f]{6}$/i.test(c) && contrast(c, '#2B2118') >= contrast(c, '#FFFFFF') ? '#2B2118' : '#FFFFFF'), n = nightOf(c);
+    return '--c:' + c + ';--c-rgb:' + p.rgb + ';--c-ink:' + p.ink + ';--c-ink-p:' + pi + ';--c-n:' + n.c + ';--c-nt:' + n.t;
   };
   App.avatar = function (p, size, cls) {
     if (typeof p === 'string') p = App.person(p);
     size = size || 48;
-    return '<span class="avatar ' + (cls || '') + '" style="' + App.pstyle(p) + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.46) + 'px">' + (p.id === 'family' ? '★' : p.name[0]) + '</span>';
+    return '<span class="avatar ' + (cls || '') + '" style="' + App.pstyle(p) + ';width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.46) + 'px">' + (p.id === 'family' ? '★' : (p.name || '?')[0]) + '</span>';
   };
   App.dots = function (ids, size) {
     return '<span class="dots">' + ids.map(function (id) { return '<i style="' + App.pstyle(id) + (size ? ';width:' + size + 'px;height:' + size + 'px' : '') + '"></i>'; }).join('') + '</span>';
@@ -142,8 +176,9 @@
       var soccer = App.timedOn(App.now()).filter(function (e) { return /soccer/i.test(e.title) && e.start > App.now(); })[0];
       advice = soccer ? 'Pack a rain jacket for soccer' : 'Grab a rain jacket';
     } else {
-      summary = W.t[h] < 12 ? 'Clear and cool' : 'Dry all day';
-      advice = W.t[h] < 12 ? 'Jacket weather' : 'Light layers';
+      var cool = W.t[h] < (W.unit === 'C' ? 12 : 54);
+      summary = cool ? 'Clear and cool' : 'Dry all day';
+      advice = cool ? 'Jacket weather' : 'Light layers';
     }
     var labels = { sun: 'Sunny', moon: 'Clear', partly: 'Partly cloudy', cloud: 'Overcast', rain: 'Rain' };
     return { temp: W.t[h], cond: W.c[h], label: labels[W.c[h]], hi: W.hi, lo: W.lo, summary: summary, advice: advice, hour: h };
@@ -220,6 +255,7 @@
     opts = opts || {};
     var box = $('#toasts');
     box.innerHTML = '';
+    box.classList.toggle('is-top', !!opts.top); // opts.top: show it at the top of the screen (doesn't cover the content)
     clearTimeout(toastTimer);
     var ms = opts.ms || 5000;
     var t = document.createElement('div');
@@ -284,6 +320,7 @@
   // ------------------------------------------------------------ modes: day / ambient / night
   App.setMode = function (m) {
     var stage = $('#stage');
+    if (m === 'day' || m === 'ambient') App.nightBy = null; // night <-> nightdash keeps the reason it went dark
     App.mode = m;
     stage.dataset.mode = m;
     App.emit('mode', m);
@@ -296,14 +333,28 @@
     idleSec++;
     var blocked = $('#takeover').classList.contains('is-open');
     if (App.mode === 'nightdash' && idleSec >= 20) { App.setMode('night'); return; }
+    if (App.mode === 'day' && !blocked && idleSec >= 30 && App.isQuiet()) { App.closeSheet(); App.go(App.homeTab || 'home'); App.setMode('night'); App.nightBy = 'quiet'; return; }
     if (App.mode !== 'day' || blocked) return;
-    if (idleSec === App.idle.home && App.current !== 'home') { App.closeSheet(); App.go('home'); }
+    if (idleSec === App.idle.home && App.current !== (App.homeTab || 'home')) { App.closeSheet(); App.go(App.homeTab || 'home'); }
     if (idleSec >= App.idle.ambient) {
       App.closeSheet();
-      App.go('home');
-      App.setMode(App.isNight() ? 'night' : 'ambient');
+      App.go(App.homeTab || 'home');
+      var dark = App.isNight();
+      App.setMode(dark ? 'night' : 'ambient');
+      if (dark) App.nightBy = App.isQuiet() ? 'quiet' : 'hours';
     }
   }
+  // The night clock (and the night dashboard) end on their own: at the end of quiet hours, or as soon as the parent
+  // clears or moves them in admin (checked every minute and on every state update, incl. SSE). Quiet-hours night ends
+  // when quiet hours no longer cover now; the no-quiet-hours idle night (10 PM–6 AM) at 6 AM, or when quiet hours
+  // that don't cover now get set. A night clock opened by hand (demo / keyboard 'n') isn't touched.
+  App.checkNight = function () {
+    if ((App.mode !== 'night' && App.mode !== 'nightdash') || !App.nightBy) return;
+    if (App.nightBy === 'quiet' ? App.isQuiet() : App.isNight()) return;
+    App.closeSheet(); App.go(App.homeTab || 'home'); App.setMode('day'); App.resetIdle();
+  };
+  App.on('minute', function () { App.checkNight(); });
+  App.on('data', function () { App.checkNight(); });
   App.resetIdle = function () { idleSec = 0; };
 
   // ------------------------------------------------------------ stage scaling (desktop preview only)
@@ -327,14 +378,27 @@
 
   // ------------------------------------------------------------ boot
   App.start = function () {
-    App.setTime(15, 18); // demo default: a busy weekday afternoon
+    // App.setTime(15, 18); // demo default: a busy weekday afternoon
     fit();
     window.addEventListener('resize', fit);
-    // Switch tabs the instant a finger lands (pointerdown), not on release. Keyboard "clicks"
-    // (detail === 0) still work.
-    $('#rail').addEventListener('pointerdown', function (e) {
+    // Tap vs drag: a tab switches on release only if the finger moved < 10px and the rail didn't
+    // scroll, so an overfull rail can be dragged. A touch scroll fires pointercancel (no switch).
+    // Keyboard "clicks" (detail === 0) still work.
+    var rail = $('#rail'), press = null;
+    rail.addEventListener('pointerdown', function (e) {
       var b = e.target.closest('[data-go]');
-      if (b && e.button === 0) App.go(b.dataset.go);
+      press = b && e.button === 0 ? { b: b, x: e.clientX, y: e.clientY, top: rail.scrollTop, id: e.pointerId } : null;
+    });
+    rail.addEventListener('pointermove', function (e) {
+      if (press && press.id === e.pointerId && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) >= 10) press = null;
+    });
+    rail.addEventListener('pointercancel', function () { press = null; });
+    rail.addEventListener('scroll', function () { if (press && rail.scrollTop !== press.top) press = null; });
+    rail.addEventListener('pointerup', function (e) {
+      var p = press; press = null;
+      if (!p || p.id !== e.pointerId || rail.scrollTop !== p.top) return;
+      var b = e.target.closest('[data-go]');
+      if (b === p.b) App.go(b.dataset.go);
     });
     $('#rail').addEventListener('click', function (e) {
       var b = e.target.closest('[data-go]');
@@ -347,7 +411,11 @@
     setInterval(tick, 1000);
     App.emit('ready');
     refreshStale(1500);
-    setTimeout(function () { App.toast('Tip: press and hold the <b>clock</b> in the sidebar for demo controls', { ms: 6000, icon: 'bolt' }); }, 1200);
+    // The demo-controls tip: once per device (localStorage), at the top so it doesn't sit on the content.
+    setTimeout(function () {
+      try { if (localStorage.getItem('pf.tipSeen')) return; localStorage.setItem('pf.tipSeen', '1'); } catch (e) {}
+      App.toast('Tip: press and hold the <b>clock</b> in the sidebar for demo controls', { ms: 6000, icon: 'bolt', top: true });
+    }, 1200);
   };
   document.addEventListener('DOMContentLoaded', function () { App.start(); });
 })();

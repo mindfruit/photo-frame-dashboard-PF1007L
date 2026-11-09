@@ -12,7 +12,7 @@
     if (min < 1440) return Math.floor(min / 60) + 'h ' + (min % 60) + 'm';
     return Math.floor(min / 1440) + 'd ' + Math.floor((min % 1440) / 60) + 'h';
   }
-  function fmtTokens(m) { return m >= 10 ? Math.round(m) + 'M' : m.toFixed(1) + 'M'; }
+  function fmtTokens(m) { m = +m || 0; return m >= 10 ? Math.round(m) + 'M' : m.toFixed(1) + 'M'; }
 
   function meter(m, ai, mi) {
     var left = minsLeft(m);
@@ -29,7 +29,11 @@
       '</div>';
   }
 
+  // /api/state may have no agents (or partial ones): treat missing lists as empty.
+  function list() { return Array.isArray(D.agents) ? D.agents : []; }
+
   function spark(vals) {
+    if (!vals || vals.length < 2) return '';
     var w = 112, h = 34, max = Math.max.apply(null, vals);
     var pts = vals.map(function (v, i) { return (i / (vals.length - 1) * w).toFixed(1) + ',' + (h - 3 - v / max * (h - 6)).toFixed(1); });
     var last = pts[pts.length - 1].split(',');
@@ -38,14 +42,15 @@
   }
 
   function card(a) {
-    var hot = a.meters.some(function (m) { return m.used >= 85; });
+    var meters = a.meters || [];
+    var hot = meters.some(function (m) { return m.used >= 85; });
     var status = a.status === 'ok'
       ? '<span class="ag-status"><i></i>Operational</span>'
       : '<span class="ag-status is-warn"><i></i>Degraded</span>';
     return '<section class="ag-card" style="' + pstyle(a) + '">' +
-      '<header class="ag-head"><div class="ag-id"><i class="ag-swatch"></i><b>' + a.name + '</b><span class="ag-plan">' + a.plan + '</span></div>' + status + '</header>' +
+      '<header class="ag-head"><div class="ag-id"><i class="ag-swatch"></i><b>' + a.name + '</b>' + (a.plan ? '<span class="ag-plan">' + a.plan + '</span>' : '') + '</div>' + status + '</header>' +
       (a.incident ? '<div class="ag-incident">' + App.icon('bolt', 16) + a.incident + '</div>' : hot ? '<div class="ag-incident ag-incident--hot">' + App.icon('clock', 16) + 'Near the session limit</div>' : '') +
-      a.meters.map(function (m, mi) { return meter(m, D.agents.indexOf(a), mi); }).join('') +
+      meters.map(function (m, mi) { return meter(m, list().indexOf(a), mi); }).join('') +
       '<footer class="ag-foot"><div><span class="num">' + fmtTokens(a.tokens) + '</span><small>tokens today</small></div>' +
       '<div><span class="num">' + (a.cost ? '$' + a.cost.toFixed(2) : 'Incl.') + '</span><small>' + (a.cost ? 'API cost' : 'in plan') + '</small></div>' +
       spark(a.week) + '</footer>' +
@@ -55,15 +60,15 @@
   function summary() {
     var now = App.now();
     var totals = [0, 1, 2, 3, 4, 5, 6].map(function (i) {
-      return D.agents.reduce(function (s, a) { return s + a.week[i]; }, 0);
+      return list().reduce(function (s, a) { return s + ((a.week && a.week[i]) || 0); }, 0);
     });
-    var max = Math.max.apply(null, totals);
+    var max = Math.max.apply(null, totals) || 1;
     var week = totals.reduce(function (s, v) { return s + v; }, 0);
-    var cost = D.agents.reduce(function (s, a) { return s + a.cost; }, 0);
+    var cost = list().reduce(function (s, a) { return s + (a.cost || 0); }, 0);
     var bars = totals.map(function (t, i) {
       var d = App.addDays(now, i - 6);
       return '<div class="ag-col' + (i === 6 ? ' is-today' : '') + '"><div class="ag-stack" style="height:' + (t / max * 100) + '%">' +
-        D.agents.map(function (a) { return '<i style="' + pstyle(a) + ';flex-grow:' + a.week[i] + '"></i>'; }).join('') +
+        list().map(function (a) { return '<i style="' + pstyle(a) + ';flex-grow:' + ((a.week && a.week[i]) || 0) + '"></i>'; }).join('') +
         '</div><span>' + (i === 6 ? 'Today' : App.fmt.dayShort(d)) + '</span></div>';
     }).join('');
     return '<section class="ag-card ag-sum">' +
@@ -71,7 +76,7 @@
       '<div class="ag-sum-stats"><div><span class="num">' + fmtTokens(week) + '</span><small>tokens</small></div>' +
       '<div><span class="num">$' + cost.toFixed(0) + '</span><small>API cost today</small></div></div>' +
       '<div class="ag-chart">' + bars + '</div>' +
-      '<div class="ag-legend">' + D.agents.map(function (a) { return '<span style="' + pstyle(a) + '"><i></i>' + a.name + '</span>'; }).join('') + '</div>' +
+      '<div class="ag-legend">' + list().map(function (a) { return '<span style="' + pstyle(a) + '"><i></i>' + a.name + '</span>'; }).join('') + '</div>' +
       '</section>';
   }
 
@@ -83,7 +88,9 @@
   function tick() {
     if (!V.el || !V.el.firstChild) return;
     App.$$('[data-meter]', V.el).forEach(function (foot) {
-      var ix = foot.dataset.meter.split(','), m = D.agents[+ix[0]].meters[+ix[1]], p = paceOf(m);
+      var ix = foot.dataset.meter.split(','), ag = list()[+ix[0]], m = ag && ag.meters && ag.meters[+ix[1]];
+      if (!m) return;
+      var p = paceOf(m);
       foot.querySelector('[data-reset]').textContent = fmtLeft(p.left);
       var pe = foot.querySelector('[data-pace]');
       pe.textContent = p.text;
@@ -104,7 +111,8 @@
       '<header class="ag-top"><div><div class="label">AI plans · usage limits</div><h1 class="serif">Agents</h1></div>' +
       '<div class="ag-sync"><span class="label">' + synced() + '</span>' +
       '<button class="icon-btn" data-refresh aria-label="Refresh">' + App.icon('undo', 26) + '</button></div></header>' +
-      '<div class="ag-grid">' + D.agents.map(card).join('') + summary() + '</div>' +
+      (list().length ? '<div class="ag-grid">' + list().map(card).join('') + summary() + '</div>'
+        : '<div class="ag-grid"><section class="ag-card"><b>No agents connected yet</b><p class="label">Usage shows up here once agents report in.</p></section></div>') +
       '</div>';
   }
 

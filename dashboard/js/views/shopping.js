@@ -6,7 +6,7 @@
 
   function open() { return D.groceries.filter(function (g) { return !g.done && (V.store === 'all' || g.store === V.store); }); }
   function done() { return D.groceries.filter(function (g) { return g.done && (V.store === 'all' || g.store === V.store); }); }
-  function storeName(id) { return D.stores.filter(function (s) { return s.id === id; })[0].name; }
+  function storeName(id) { var s = D.stores.filter(function (s) { return s.id === id; })[0]; return s ? s.name : ''; }
 
   function categorize(name) {
     var n = name.toLowerCase();
@@ -142,17 +142,20 @@
     var g = find(name, false), msg;
     if (g) {
       g.qty++;
+      D.api('PUT', 'shopping/' + g.id, { qty: g.qty });
       msg = 'Already on the list · now <b>×' + g.qty + '</b> ' + App.esc(g.name);
       var q = V.el.querySelector('.s-list [data-id="' + g.id + '"] .s-qty .num');
       if (q) q.textContent = g.qty;
     } else if ((g = find(name, true))) {
       g.done = false; g.qty = 1;
+      D.api('PUT', 'shopping/' + g.id, { done: 0, qty: 1 });
       msg = 'Added back <b>' + App.esc(g.name) + '</b>';
       paintList();
     } else {
       var cat = D.catalog.filter(function (c) { return c[0].toLowerCase() === name.toLowerCase(); })[0];
-      g = { id: D._gid(), name: cat ? cat[0] : name.charAt(0).toUpperCase() + name.slice(1), cat: categorize(name), qty: 1, store: V.store === 'all' ? 'grocer' : V.store, done: false, note: '' };
+      g = { id: D._gid(), name: cat ? cat[0] : name.charAt(0).toUpperCase() + name.slice(1), cat: categorize(name), qty: 1, store: V.store === 'all' ? (D.stores[0] ? D.stores[0].id : '') : V.store, done: false, note: '' };
       D.groceries.push(g);
+      D.api('POST', 'shopping', { name: g.name, cat: g.cat, qty: 1, store_id: g.store || null });
       msg = 'Added <b>' + App.esc(g.name) + '</b> to ' + g.cat;
       insertRow(g);
     }
@@ -174,6 +177,7 @@
       if (!V.pending[g.id]) return;
       delete V.pending[g.id];
       g.done = true;
+      D.api('PUT', 'shopping/' + g.id, { done: 1 });
       removeRow(g);
       refreshSuggestFor(g);
       App.emit('data');
@@ -184,6 +188,7 @@
         var wasDone = g.done;
         delete V.pending[g.id];
         g.done = false;
+        if (wasDone) D.api('PUT', 'shopping/' + g.id, { done: 0 });
         if (wasDone) paintList();
         else { var r = V.el.querySelector('.s-list [data-id="' + g.id + '"]'); if (r) r.classList.remove('is-checking'); }
         refreshSuggestFor(g);
@@ -203,6 +208,7 @@
     if ((t = e.target.closest('[data-qty]'))) {
       var q = D.groceries.filter(function (x) { return x.id === t.dataset.id; })[0];
       q.qty = Math.max(1, q.qty + +t.dataset.qty);
+      D.api('PUT', 'shopping/' + q.id, { qty: q.qty });
       t.parentNode.querySelector('.num').textContent = q.qty;
       refreshSuggestFor(q);
       return;
@@ -212,16 +218,20 @@
     if ((t = e.target.closest('[data-drawer]'))) { V.drawer = !V.drawer; return paintList(); }
     if ((t = e.target.closest('[data-revive]'))) {
       var r = D.groceries.filter(function (x) { return x.id === t.dataset.revive; })[0];
-      r.done = false; paintList(); paintSuggest(); App.emit('data');
+      r.done = false; D.api('PUT', 'shopping/' + r.id, { done: 0 }); paintList(); paintSuggest(); App.emit('data');
       return App.toast('Added back <b>' + App.esc(r.name) + '</b>', { icon: 'cart', ms: 2500 });
     }
     if ((t = e.target.closest('[data-clear]'))) {
       var gone = done();
       D.groceries = D.groceries.filter(function (x) { return gone.indexOf(x) < 0; });
+      D.api('POST', 'shopping/clear-done');
       V.drawer = false;
       paintList();
       App.toast('Cleared ' + gone.length + ' items', {
-        icon: 'check', undo: function () { D.groceries = D.groceries.concat(gone); paintList(); }
+        icon: 'check', undo: function () {
+          D.groceries = D.groceries.concat(gone); paintList();
+          gone.forEach(function (x) { D.api('POST', 'shopping', { name: x.name, cat: x.cat, qty: x.qty, store_id: x.store || null, done: 1, note: x.note }); });
+        }
       });
     }
   }

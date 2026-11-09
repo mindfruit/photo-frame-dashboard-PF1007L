@@ -48,6 +48,7 @@ ul { margin: 0; padding: 0; list-style: none; }
   overflow: hidden;
   display: grid;
   grid-template-columns: 76px 1fr;
+  grid-template-rows: minmax(0, 1fr); /* always exactly the screen height; a long rail scrolls itself */
 }
 
 /* ---------------------------------------------------------------- rail */
@@ -57,7 +58,10 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-right: 2px solid var(--ink);
   background: var(--paper);
   z-index: 5;
+  min-height: 0; overflow-x: hidden; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain;
 }
+.rail > * { flex-shrink: 0; } /* tabs keep 72px and scroll instead of squashing */
 .rail-item {
   height: 72px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
@@ -79,6 +83,13 @@ ul { margin: 0; padding: 0; list-style: none; }
 .view.is-active, .view.is-warming { content-visibility: visible; }
 .view.is-active { z-index: 1; }
 .view--bleed { padding: 0; }
+/* view-scroll: every tab's content box scrolls vertically by touch if it ever outgrows the 1280x800 stage.
+   Views with their own inner list scroller (cal .grid-scroll, .ch-list, .s-list, .pv-grid, .hc-rooms) fit exactly, so
+   the view itself never scrolls; full-bleed views (photos) stay fixed. */
+.view { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.view--bleed { overflow: hidden; }
+.grid-scroll, .ch-list, .s-list, .pv-grid, .hc-rooms, .ag-card, .tiles--sheet { -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; }
+.view .ag-card { overflow-y: auto; }
 
 /* ---------------------------------------------------------------- components */
 .card { background: var(--card); border-radius: var(--r); padding: 18px 20px; position: relative; }
@@ -172,6 +183,9 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
   transform: translateY(140%);
 }
 .toast.is-in { transform: none; }
+.toasts.is-top { top: 20px; bottom: auto; }
+.toasts.is-top .toast { transform: translateY(-140%); }
+.toasts.is-top .toast.is-in { transform: none; }
 .toast-msg { padding: 18px 12px 18px 0; }
 .toast--error { background: var(--alert); }
 .toast-undo {
@@ -293,12 +307,7 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 .demo-grid button:active, .demo-grid button.is-on { background: #fff; color: var(--ink); }
 .demo-note { font-size: 16px; color: rgba(255, 255, 255, .6); }
 
-/* ---------------------------------------------------------------- night dashboard (tap on night clock) */
-.stage[data-mode="nightdash"] > .rail,
-.stage[data-mode="nightdash"] > .views {
-  filter: invert(1) hue-rotate(180deg) grayscale(1) sepia(1) saturate(5) hue-rotate(-38deg) brightness(.62);
-}
-.stage[data-mode="nightdash"] { background: #000; }
+/* ---------------------------------------------------------------- night dashboard (tap on night clock): css/night.css */
 
 /* ---------------------------------------------------------------- diagnostics overlay (?diag) */
 .diag {
@@ -309,3 +318,10 @@ button.card:active, .h-hero:active, .h-photo:active { transform: scale(.985); }
 }
 .diag b { color: #fff; }
 .diag u { text-decoration: none; color: #aaa; }
+
+/* Kid-lock screens (Devices in the parent page): no menu rail, one full-screen tab */
+.stage.kid-lock { grid-template-columns: 1fr; }
+.stage.kid-lock .rail { display: none; }
+.rail-item[hidden] { display: none; }
+/* Night screen brightness per screen */
+.stage[data-mode="night"] .night > * { opacity: var(--night-dim, .4); }

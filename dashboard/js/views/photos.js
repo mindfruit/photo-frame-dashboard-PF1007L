@@ -2,7 +2,18 @@
 (function () {
   'use strict';
   var V = { el: null, show: null, layout: 'auto', loud: false };
-  var LAYOUTS = [['auto', 'Auto'], ['cover', 'Cover'], ['pair', 'Pair'], ['collage', 'Collage'], ['polaroid', 'Polaroid']];
+  // No 'Polaroid' mode any more: per-source frame styles (admin Photos › Frame styles) replace it.
+  var LAYOUTS = [['auto', 'Auto'], ['cover', 'Cover'], ['pair', 'Pair'], ['collage', 'Collage']];
+  var calmT;
+  // The mode pill and the Previous / Favourite / Next buttons fade out together after a few seconds so they don't sit on
+  // the photo; any tap brings them all back (the hidden buttons take no taps, so that tap doesn't also press one).
+  function wake() {
+    var box = V.el && V.el.querySelector('.photos');
+    if (!box) return;
+    box.classList.remove('is-calm');
+    clearTimeout(calmT);
+    calmT = setTimeout(function () { box.classList.add('is-calm'); }, 4000);
+  }
 
   function heart() {
     var s = V.show && V.show.current, on = s && s.photos[0].fav;
@@ -13,6 +24,7 @@
 
   App.register('photos', {
     show: function (el) {
+      if (V.layout === 'polaroid') V.layout = 'auto'; // old stored mode
       if (!V.el) {
         V.el = el;
         el.innerHTML = '<div class="photos">' +
@@ -29,6 +41,7 @@
           '  <button class="ph-btn" data-next>' + App.icon('right', 30) + '</button>' +
           '</div></div>';
         V.show = new App.Slideshow(el.querySelector('.ph-stage'), { layout: V.layout, interval: 15000, onChange: function () { setTimeout(heart); } });
+        el.addEventListener('pointerdown', wake, true);
         el.addEventListener('click', function (e) {
           var t = e.target.closest('button');
           if (!t) return;
@@ -50,8 +63,9 @@
         });
       }
       V.show.start();
+      wake();
     },
-    resume: function () { V.show.start(); },
-    hide: function () { if (V.show) V.show.stop(); }
+    resume: function () { V.show.start(); wake(); },
+    hide: function () { if (V.show) V.show.stop(); clearTimeout(calmT); }
   });
 })();

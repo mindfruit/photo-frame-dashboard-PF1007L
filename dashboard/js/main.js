@@ -2,6 +2,7 @@
 import './icons.js';
 import './data.js';
 import './app.js';
+import './sounds.js';
 import './system.js';
 import './slideshow.js';
 import './views/home.js';
@@ -11,5 +12,7 @@ import './views/shopping.js';
 import './views/photos.js';
 import './views/control.js';
 import './views/agents.js';
+import './views/person.js';
+import './device.js';
 import './views/ambient.js';
 import './diag.js';

@@ -1,0 +1,149 @@
+/* Night dashboard (tap the night clock during quiet hours: .stage[data-mode="nightdash"]).
+   A real dark palette instead of a whole-page filter: the old invert() turned photos into negatives and re-filtered
+   the whole page on the PF1007L GPU every frame. Tokens are redefined on .stage (so they beat both the default
+   tokens and html[data-theme=paper]); a few components with hard-coded light colours get dark ones; photos are only
+   muted, with a static filter on the <img> elements themselves (never on the page root).
+   Style per screen (admin › Screens › At night, <html data-night="dim|red">, js/device.js):
+     dim (default) = muted natural colours, small text ≥4.5:1;  red = amber/red text for bedrooms, dimmer warmer photos. */
+
+.stage[data-mode="nightdash"] {
+  --paper: #15110D; --paper-2: #231C15; --card: #1C1712; --line: #3A2F24;
+  --ink: #C2A780; --ink-rgb: 194 167 128; --ink-2: #A99070; --mute: #A38B6A;
+  --alert: #D06A55; --alert-rgb: 208 106 85; --amber: #C98A3C; --amber-rgb: 201 138 60; --ok: #6FA07E;
+  --warm: #B8924F; --warm-rgb: 184 146 79; --night: #B8281A;
+  --n-sel: #3A2E22;   /* selected / "on" fills (ink text 5.7:1) */
+  --n-inv: #2E251C;   /* blocks that are ink-coloured by day */
+  --n-gold: #C9A24A;  /* star counts */
+  --n-photo: brightness(.55) saturate(.6);
+  /* paper theme tokens (only read under html[data-theme=paper]) */
+  --bg: #15110D; --sheet: #1C1712; --ink-soft: #A99070; --rail-bg: #1A1510; --accent: #8A7136;
+  --p1: #50281A; --p2: #4A3626; --p3: #433A20; --p4: #2B3E30; --p5: #2E3D4B; --p6: #433650; /* ink ≥4.8:1 on each */
+  background: var(--paper); color: var(--ink);
+}
+html[data-night="red"] .stage[data-mode="nightdash"] {
+  --paper: #0D0705; --paper-2: #1B0E09; --card: #140A07; --line: #2E150D;
+  --ink: #C0662E; --ink-rgb: 192 102 46; --ink-2: #A85A2E; --mute: #A0582E;
+  --alert: #C0462E; --alert-rgb: 192 70 46; --amber: #A8562A; --amber-rgb: 168 86 42; --ok: #8A5A2E;
+  --warm: #9A4A26; --warm-rgb: 154 74 38; --night: #A02618;
+  --n-sel: #2A130B; --n-inv: #22100A; --n-gold: #B0602C;
+  --n-photo: grayscale(1) sepia(1) saturate(1.6) hue-rotate(-12deg) brightness(.42); /* grayscale first: no blue or green left */
+  --bg: #0D0705; --sheet: #140A07; --ink-soft: #A85A2E; --rail-bg: #110805; --accent: #5A2A14;
+  --p1: #3A160C; --p2: #36180C; --p3: #34190C; --p4: #2E160C; --p5: #2A1610; --p6: #301412; /* ink ≈4:1 */
+}
+/* ---- photos: muted, never inverted (per element, static) */
+.stage[data-mode="nightdash"] .views img { filter: var(--n-photo); }
+.stage[data-mode="nightdash"] .slide, .stage[data-mode="nightdash"] .slide--framed, .stage[data-mode="nightdash"] .kb { background: #000; }
+.stage[data-mode="nightdash"] .polaroid, .stage[data-mode="nightdash"] .fr--polaroid { background: var(--n-inv); }
+.stage[data-mode="nightdash"] .polaroid-img { background: #000; }
+.stage[data-mode="nightdash"] .polaroid figcaption, .stage[data-mode="nightdash"] .fr-cap { color: var(--ink); }
+.stage[data-mode="nightdash"] .fr--torn { --mat: var(--n-inv); }
+.stage[data-mode="nightdash"] .cap, .stage[data-mode="nightdash"] .h-photo-cap, .stage[data-mode="nightdash"] .photos { color: var(--ink); }
+
+/* ---- person colours (App.pstyle): Dim = the colour sunk into the night background (--c-n, night ink reads on it),
+   text in the colour = --c-nt; Warm red = no other hues, every person block is the red "selected" fill.
+   !important so it beats the inline --c (and the paper theme's --c-ink-p rule). */
+.stage[data-mode="nightdash"] [style*="--c-n:"] { --c: var(--c-n) !important; --c-ink: var(--ink) !important; }
+html[data-night="red"] .stage[data-mode="nightdash"] [style*="--c-n:"] { --c: var(--n-sel) !important; --c-nt: var(--ink) !important; --c-rgb: var(--ink-rgb) !important; }
+.stage[data-mode="nightdash"] .h-who small b, .stage[data-mode="nightdash"] .pv-learn-big, .stage[data-mode="nightdash"] .ch-alldone,
+.stage[data-mode="nightdash"] .ch-lane:not([data-lane="otto"]) .ch-alldone, .stage[data-mode="nightdash"] .avatar--away { color: var(--c-nt, var(--ink)); }
+.stage[data-mode="nightdash"] .avatar--away { box-shadow: inset 0 0 0 3px var(--c-nt, var(--ink)); }
+.stage[data-mode="nightdash"] .ch-head .avatar { background: var(--paper); color: var(--c-nt, var(--ink)); }
+/* kid-tab header: an ordinary card at night (both themes), the person colour only on the avatar and a 4px top strip */
+.stage[data-mode="nightdash"] .pv-top, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-top {
+  background: var(--card); color: var(--ink); border-radius: 14px; box-shadow: inset 0 4px 0 var(--n-strip, var(--c));
+}
+html[data-night="red"] .stage[data-mode="nightdash"] { --n-strip: var(--ink-2); }
+.stage[data-mode="nightdash"] .pv-top .avatar, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-top .avatar { background: var(--c); color: var(--ink); }
+
+/* ---- blocks that are ink-coloured by day: a raised dark surface with ink text */
+.stage[data-mode="nightdash"] .rail-item.is-active, .stage[data-mode="nightdash"] .btn--solid, .stage[data-mode="nightdash"] .seg button.is-on,
+.stage[data-mode="nightdash"] .seg--dark button.is-on, .stage[data-mode="nightdash"] .seg--glass button.is-on, .stage[data-mode="nightdash"] .chip.is-on,
+.stage[data-mode="nightdash"] .scene.is-on, .stage[data-mode="nightdash"] .s-tile.is-on, .stage[data-mode="nightdash"] .s-row.is-checking .s-box,
+.stage[data-mode="nightdash"] .np-btn, .stage[data-mode="nightdash"] .sc-knob, .stage[data-mode="nightdash"] .hx-pin, .stage[data-mode="nightdash"] .s-store,
+.stage[data-mode="nightdash"] .pill--soon, .stage[data-mode="nightdash"] .banner-btn--solid, .stage[data-mode="nightdash"] .fab {
+  background: var(--n-sel); color: var(--ink); box-shadow: inset 0 0 0 2px var(--line);
+}
+.stage[data-mode="nightdash"] .toast, .stage[data-mode="nightdash"] .banner--ink, .stage[data-mode="nightdash"] .h-hero--empty, .stage[data-mode="nightdash"] .ag-sum,
+.stage[data-mode="nightdash"] .day-head.is-today, .stage[data-mode="nightdash"] .wk-col.is-today .wk-head, .stage[data-mode="nightdash"] .mo-cell.is-today,
+.stage[data-mode="nightdash"] .ev.is-family, .stage[data-mode="nightdash"] .s-add, .stage[data-mode="nightdash"] .hc-climate {
+  background: var(--n-inv); color: var(--ink);
+}
+.stage[data-mode="nightdash"] .th-now, .stage[data-mode="nightdash"] .th-now b, .stage[data-mode="nightdash"] .ag-sum .ag-plan, .stage[data-mode="nightdash"] .ag-sum-stats small,
+.stage[data-mode="nightdash"] .ag-col span, .stage[data-mode="nightdash"] .ag-col.is-today span, .stage[data-mode="nightdash"] .ag-legend span, .stage[data-mode="nightdash"] .label--light { color: var(--ink-2); }
+.stage[data-mode="nightdash"] .pill--alert, .stage[data-mode="nightdash"] .banner--ink .banner-btn--solid { background: var(--n-sel); color: var(--alert); }
+.stage[data-mode="nightdash"] .mo-cell.is-today .mo-dots i[style*="--c:#111111"], .stage[data-mode="nightdash"] .ag-stack i[style*="#111111"], .stage[data-mode="nightdash"] .ag-legend span[style*="#111111"] i { background: var(--ink); }
+.stage[data-mode="nightdash"] .lane.is-today { background: rgb(var(--ink-rgb) / .04); }
+
+/* ---- colour emoji ignore `color`: fade them instead (opacity, cheap) */
+.stage[data-mode="nightdash"] .pv-emoji, .stage[data-mode="nightdash"] .pv-jar-emoji, .stage[data-mode="nightdash"] .pv-pic-e, .stage[data-mode="nightdash"] .pv-note-e,
+.stage[data-mode="nightdash"] .pv-fam-e, .stage[data-mode="nightdash"] .ch-emoji, .stage[data-mode="nightdash"] .pv-dress-row .kid, .stage[data-mode="nightdash"] .pv-face > span { opacity: .6; }
+html[data-night="red"] .stage[data-mode="nightdash"] .pv-emoji, html[data-night="red"] .stage[data-mode="nightdash"] .pv-jar-emoji, html[data-night="red"] .stage[data-mode="nightdash"] .pv-pic-e,
+html[data-night="red"] .stage[data-mode="nightdash"] .pv-note-e, html[data-night="red"] .stage[data-mode="nightdash"] .pv-fam-e, html[data-night="red"] .stage[data-mode="nightdash"] .ch-emoji,
+html[data-night="red"] .stage[data-mode="nightdash"] .pv-dress-row .kid, html[data-night="red"] .stage[data-mode="nightdash"] .pv-face > span { opacity: .4; }
+
+/* ---- faded small text kept readable */
+.stage[data-mode="nightdash"] .seg button .num { opacity: .9; }
+.stage[data-mode="nightdash"] .ch-sub { opacity: 1; }
+
+/* ---- light pastel fills */
+.stage[data-mode="nightdash"] .s-input-wrap { background: var(--paper-2); color: var(--ink); }
+.stage[data-mode="nightdash"] .s-input::placeholder { color: var(--mute); }
+.stage[data-mode="nightdash"] .tile--light.is-on, .stage[data-mode="nightdash"] .tile--blind.is-on { background: var(--n-sel); }
+.stage[data-mode="nightdash"] .tile--blind .tile-fill { background: rgb(var(--ink-rgb) / .14); }
+.stage[data-mode="nightdash"] .tile.is-moving { background: var(--n-sel); }
+.stage[data-mode="nightdash"] .sum--warm .label, .stage[data-mode="nightdash"] .sum--warn .label { color: var(--paper); }
+.stage[data-mode="nightdash"] .pv-chore.is-pending, .stage[data-mode="nightdash"] .pv-reward.is-pending, .stage[data-mode="nightdash"] .ch.is-pending,
+.stage[data-mode="nightdash"] .pv-jar.is-full { background: var(--n-sel); box-shadow: inset 0 0 0 3px var(--n-gold); }
+.stage[data-mode="nightdash"] .pv-chore.is-pending .pv-tick { background: var(--n-sel); color: var(--ink); border-color: var(--n-gold); }
+.stage[data-mode="nightdash"] .pv-chore-s, .stage[data-mode="nightdash"] .pv-pend, .stage[data-mode="nightdash"] .pv-jar-goal small, .stage[data-mode="nightdash"] .ch.is-pending::after,
+.stage[data-mode="nightdash"] .pv-bigstar, .stage[data-mode="nightdash"] .jar-stars, .stage[data-mode="nightdash"] .ch-text small .i, .stage[data-mode="nightdash"] .ch-lane[data-lane] .ch-alldone { color: var(--n-gold); }
+.stage[data-mode="nightdash"] .pv-week .is-hit i, .stage[data-mode="nightdash"] .pv-bar i { background: var(--n-gold); }
+.stage[data-mode="nightdash"] .pv-week i { color: var(--paper); }
+.stage[data-mode="nightdash"] .pv-reward.is-ready { box-shadow: inset 0 0 0 3px var(--n-gold); }
+.stage[data-mode="nightdash"] .jar { background: var(--paper-2); border-color: var(--line); }
+.stage[data-mode="nightdash"] .jar-fill { background: rgb(var(--amber-rgb) / .45); }
+.stage[data-mode="nightdash"] .pv-sleep.is-day, .stage[data-mode="nightdash"] .pv-sleep.is-night { background: var(--n-inv); color: var(--ink); }
+.stage[data-mode="nightdash"] .h-hr.is-wet .h-hr-i { color: #5F86B0; }
+.stage[data-mode="nightdash"] .h-st-row.is-warn, .stage[data-mode="nightdash"] .ag-status.is-warn, .stage[data-mode="nightdash"] .ag-pace.is-over, .stage[data-mode="nightdash"] .ag-incident { color: var(--amber); }
+.stage[data-mode="nightdash"] .th-verb--heating, .stage[data-mode="nightdash"] .th-verb--cooling, .stage[data-mode="nightdash"] .ph-btn--fav.is-on { background: var(--n-sel); color: var(--ink); }
+
+/* ---- Colored paper at night: same dark sheets, no torn rims or drop shadows (cheaper, and nothing bright) */
+html[data-theme=paper] .stage[data-mode="nightdash"] .room::before, html[data-theme=paper] .stage[data-mode="nightdash"] .card::before, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-card:not(.is-night):not(.is-day):not(.is-full)::before,
+html[data-theme=paper] .stage[data-mode="nightdash"] .room::after, html[data-theme=paper] .stage[data-mode="nightdash"] .card::after, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-card:not(.is-night):not(.is-day):not(.is-full)::after,
+html[data-theme=paper] .stage[data-mode="nightdash"] .pv-top::before, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-top::after,
+html[data-theme=paper] .stage[data-mode="nightdash"] .rail-item.is-active::before, html[data-theme=paper] .stage[data-mode="nightdash"] .rail-item.is-active::after,
+html[data-theme=paper] .stage[data-mode="nightdash"] .fr--torn::before, html[data-theme=paper] .stage[data-mode="nightdash"] .fr--torn::after { content: none; }
+html[data-theme=paper] .stage[data-mode="nightdash"] .room, html[data-theme=paper] .stage[data-mode="nightdash"] .card,
+html[data-theme=paper] .stage[data-mode="nightdash"] .pv-card:not(.is-night):not(.is-day):not(.is-full) {
+  background: var(--sheet); border-radius: 14px; box-shadow: inset 0 3px 0 var(--strip, var(--line));
+}
+html[data-theme=paper] .stage[data-mode="nightdash"] .rail-item.is-active { background: var(--n-sel); }
+html[data-theme=paper] .stage[data-mode="nightdash"] .room .tile.is-on .tile-fill { background: rgb(var(--ink-rgb) / .1); }
+html[data-theme=paper] .stage[data-mode="nightdash"] .pv-chore-s, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-pend, html[data-theme=paper] .stage[data-mode="nightdash"] .pv-jar-goal small { color: var(--n-gold); }
+html[data-theme=paper] .stage[data-mode="nightdash"] .fr--torn { background: var(--n-inv); }
+
+/* ---- chores: a pending chore (done, waiting for OK) keeps its title in ink on the gold-ringed fill (--mute was 4.05:1) */
+.stage[data-mode="nightdash"] .ch.is-pending .ch-text b, .stage[data-mode="nightdash"] .ch.is-pending .ch-text small { color: var(--ink); }
+.stage[data-mode="nightdash"] .pv-chore.is-pending .pv-chore-t { opacity: 1; } /* same on the kid tab (the .6 fade gave 3.1:1) */
+/* ---- kid tab: the undone-chore rings and the week strip's today ring in the person colour, muted (by day they're the
+   raw colour at full strength); Warm red: --c-rgb is the red ink there, so the same rule gives a dim red ring */
+.stage[data-mode="nightdash"] .pv-tick { border-color: rgb(var(--c-rgb) / .7); }
+.stage[data-mode="nightdash"] .pv-week .is-today i { box-shadow: inset 0 0 0 3px rgb(var(--c-rgb) / .7); }
+/* ---- kid tab "today in pictures": past items were faded with opacity .45 (2.1:1 at night); at night the text is --mute
+   at full strength instead and only the picture fades */
+.stage[data-mode="nightdash"] .pv-pic.is-past { opacity: 1; }
+.stage[data-mode="nightdash"] .pv-pic.is-past b, .stage[data-mode="nightdash"] .pv-pic.is-past small { color: var(--mute); }
+.stage[data-mode="nightdash"] .pv-pic.is-past .pv-pic-e { opacity: .3; }
+html[data-night="red"] .stage[data-mode="nightdash"] .pv-pic.is-past .pv-pic-e { opacity: .22; }
+/* ---- done kid chores: line-through plus a lighter fade than by day (.6 gave 2.4:1 in Warm red) */
+.stage[data-mode="nightdash"] .pv-chore.is-done:not(.is-pending) .pv-chore-t { opacity: .8; }
+/* ---- the chores lane progress bar: a dim fill, not a bar in full ink */
+.stage[data-mode="nightdash"] .t-bar i { background: rgb(var(--ink-rgb) / .5); }
+/* ---- past events and the hero label: by day they're faded with opacity (.38 / .45 / .8); at night the box stays
+   unfaded and the text takes a dimmer colour instead (--mute, ≥4.6:1 in Dim). The night clock's own fade is separate. */
+.stage[data-mode="nightdash"] .label--on { opacity: 1; } /* "Next up · Everyone": night ink on the person fill (.8 gave 4.25:1) */
+.stage[data-mode="nightdash"] .pv-ev.is-past, .stage[data-mode="nightdash"] .wk-ev.is-past { opacity: 1; color: var(--mute); }
+.stage[data-mode="nightdash"] .wk-ev.is-past { background: rgb(var(--ink-rgb) / .04); }
+.stage[data-mode="nightdash"] .wk-ev.is-past .wk-t { color: var(--mute); }
+.stage[data-mode="nightdash"] .ev.is-past, .stage[data-mode="nightdash"] .ev.is-past.is-family { opacity: 1; background: var(--paper-2); color: var(--mute); box-shadow: inset 4px 0 0 var(--c); }
+.stage[data-mode="nightdash"] .ev-meta { opacity: 1; } /* event times: full strength at night (.9 gave 4.2:1 on the person fill) */

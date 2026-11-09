@@ -1,0 +1,149 @@
+/* "Colored paper" theme: construction paper on a kraft table, for the kids' screens.
+   On when the screen's Look is Colored paper (<html data-theme="paper">, js/device.js). Everything is scoped under
+   html[data-theme=paper], so the default theme is untouched. Token overrides first, then a few component rules.
+   WebView 106 / PF1007L GPU: static only. Torn edges are -webkit-mask-box-image 9-slice masks (css/paper/*.png,
+   scripts/gen-paper-tears.mjs) on ::before pseudo-elements, the shadow is a second masked pseudo translated by (3px, 4px);
+   no filter / drop-shadow / blur / box-shadow on masked boxes, no new animations. Text is always ink on paper. */
+
+html[data-theme=paper] {
+  /* theme tokens */
+  --bg: #EAD9B8;          /* kraft */
+  --sheet: #FFFDF7;       /* off-white paper */
+  --ink: #2B2118;
+  --ink-soft: #5A4A3A;    /* ≥5:1 on kraft (6.1), --paper-2 (5.1) and the sheet (8.3) */
+  --rail-bg: #DCC7A0;
+  --accent: #F7CF4D;
+  --font-display: 'Fredoka', 'Archivo', system-ui, sans-serif;
+  /* construction paper (ink on each passes 4.5:1; don't darken) */
+  --p1: #E8603C; --p2: #F4A259; --p3: #F7CF4D; --p4: #6DBE7A; --p5: #6AAFE6; --p6: #AE8FDB;
+  --tear-a: url(../paper/tear-a.png);
+  /* the house tokens, mapped onto paper */
+  --paper: #EAD9B8;
+  --paper-2: #DCC7A0;
+  --card: #FFFDF7;
+  --ink-rgb: 43 33 24;
+  --ink-2: #5A4A3A;
+  --mute: #5A4A3A;
+  --line: #C9B38C;
+}
+
+/* ---- torn sheet helper, seam-free: the box's own background is the sheet inset 14px (always under the torn edge);
+   ::before = only the torn 24px rim (mask without `fill`, so the 9-slice's centre seams never show); ::after = its shadow
+   (the same tear cut to its outer 14px, translated). The content itself is never masked. */
+html[data-theme=paper] .room, html[data-theme=paper] .card, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full) { background: linear-gradient(var(--sheet), var(--sheet)) 14px 14px / calc(100% - 28px) calc(100% - 28px) no-repeat; }
+html[data-theme=paper] .room::before, html[data-theme=paper] .card::before, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full)::before, html[data-theme=paper] .room::after, html[data-theme=paper] .card::after, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full)::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none;
+}
+html[data-theme=paper] .room::before, html[data-theme=paper] .card::before, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full)::before { z-index: -1; background: var(--sheet); -webkit-mask-box-image: url(../paper/tear-a.png) 24 / 24px round; }
+html[data-theme=paper] .room::after, html[data-theme=paper] .card::after, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full)::after { z-index: -2; background: rgba(43, 33, 24, .18); transform: translate(3px, 4px); -webkit-mask-box-image: url(../paper/tear-a-rim.png) 24 / 24px round; }
+/* rotate through the three tears so neighbouring edges don't repeat */
+html[data-theme=paper] .room:nth-child(3n+2)::before, html[data-theme=paper] .card:nth-child(3n+2)::before, html[data-theme=paper] .pv-card:nth-child(3n+2)::before { -webkit-mask-box-image: url(../paper/tear-b.png) 24 / 24px round; }
+html[data-theme=paper] .room:nth-child(3n+2)::after, html[data-theme=paper] .card:nth-child(3n+2)::after, html[data-theme=paper] .pv-card:nth-child(3n+2)::after { -webkit-mask-box-image: url(../paper/tear-b-rim.png) 24 / 24px round; }
+html[data-theme=paper] .room:nth-child(3n)::before, html[data-theme=paper] .card:nth-child(3n)::before, html[data-theme=paper] .pv-card:nth-child(3n)::before { -webkit-mask-box-image: url(../paper/tear-c.png) 24 / 24px round; }
+html[data-theme=paper] .room:nth-child(3n)::after, html[data-theme=paper] .card:nth-child(3n)::after, html[data-theme=paper] .pv-card:nth-child(3n)::after { -webkit-mask-box-image: url(../paper/tear-c-rim.png) 24 / 24px round; }
+
+/* ---- page + type */
+html[data-theme=paper] .stage { background: var(--bg); }
+html[data-theme=paper] .h-time { font-family: var(--font-display); font-weight: 600; font-stretch: normal; font-size: 118px; letter-spacing: -.02em; line-height: .85; }
+html[data-theme=paper] .h-ampm { font-family: var(--font-display); font-weight: 600; }
+html[data-theme=paper] .h-clock, html[data-theme=paper] .h-weather, html[data-theme=paper] .h-presence { border-bottom-color: var(--ink); }
+html[data-theme=paper] .amb-time, html[data-theme=paper] .nt-time { font-family: var(--font-display); font-weight: 600; font-stretch: normal; }
+
+/* ---- rail: kraft, plain ink labels; the active tab is a yellow torn tag with a straight left edge */
+html[data-theme=paper] .rail { background: var(--rail-bg); border-right: 2px solid var(--line); }
+html[data-theme=paper] .rail-item { color: var(--ink); font-family: var(--font-display); font-weight: 600; font-stretch: normal; letter-spacing: .02em; font-size: 13px; isolation: isolate; }
+html[data-theme=paper] .rail-item.is-active { color: var(--ink); }
+html[data-theme=paper] .rail-item.is-active { background: linear-gradient(var(--p3), var(--p3)) 0 17px / calc(100% - 16px) calc(100% - 34px) no-repeat; }
+html[data-theme=paper] .rail-item.is-active::before, html[data-theme=paper] .rail-item.is-active::after {
+  content: ''; position: absolute; top: 3px; right: 2px; bottom: 3px; left: 0; pointer-events: none;
+}
+html[data-theme=paper] .rail-item.is-active::before { z-index: -1; background: var(--p3); -webkit-mask-box-image: url(../paper/tag.png) 24 / 24px round; }
+html[data-theme=paper] .rail-item.is-active::after { z-index: -2; background: rgba(43, 33, 24, .18); transform: translate(2px, 3px); -webkit-mask-box-image: url(../paper/tag-rim.png) 24 / 24px round; }
+html[data-theme=paper] .rail-item:not(.is-active):active { background: transparent; }
+html[data-theme=paper] .rail-clock b { font-family: var(--font-display); font-weight: 600; font-stretch: normal; font-size: 22px; }
+
+/* ---- Home: each room on a full-width white torn sheet in its paper colour (6-colour cycle) */
+html[data-theme=paper] .room { position: relative; z-index: 0; padding: 16px 22px 22px; margin: 0 4px 18px 0; --room: var(--p1); }
+html[data-theme=paper] .room:nth-child(6n+2) { --room: var(--p2); }
+html[data-theme=paper] .room:nth-child(6n+3) { --room: var(--p3); }
+html[data-theme=paper] .room:nth-child(6n+4) { --room: var(--p4); }
+html[data-theme=paper] .room:nth-child(6n+5) { --room: var(--p5); }
+html[data-theme=paper] .room:nth-child(6n+6) { --room: var(--p6); }
+html[data-theme=paper] .room-h { border-bottom: 0; padding-bottom: 2px; }
+html[data-theme=paper] .room-h h3 { position: relative; z-index: 0; display: inline-block; padding: 0 12px 2px 4px; font-family: var(--font-display); font-weight: 600; font-style: normal; font-size: 30px; letter-spacing: 0; }
+/* the heading's torn underline strip in the room colour */
+html[data-theme=paper] .room-h h3::after {
+  content: ''; position: absolute; left: -2px; right: 0; bottom: 0; height: 18px; z-index: -1; background: var(--room);
+  -webkit-mask-image: url(../paper/strip.png); -webkit-mask-size: 96px 18px; -webkit-mask-repeat: repeat-x;
+}
+/* tiles: on = room colour, off = white sheet with a 3px room-colour border; 18px radius, no torn edges, no tilt */
+html[data-theme=paper] .room .tile { background: var(--sheet); border: 3px solid var(--room); border-radius: 18px; }
+html[data-theme=paper] .room .tile.is-on { background: var(--room); }
+html[data-theme=paper] .room .tile.is-on .tile-state, html[data-theme=paper] .room .tile.is-on .tile-icon { color: var(--ink); }
+html[data-theme=paper] .room .tile.is-warn { background: var(--amber); }
+html[data-theme=paper] .room .tile.is-holding { background: var(--paper-2); }
+html[data-theme=paper] .room .tile-fill { background: var(--room); opacity: .45; }
+html[data-theme=paper] .room .tile.is-on .tile-fill { background: rgba(255, 253, 247, .35); opacity: 1; }
+/* big readings: 30px Fredoka 600 */
+html[data-theme=paper] .tile-state.num, html[data-theme=paper] .hx--sensor .tile-state, html[data-theme=paper] .hx--multi .hx-multi-primary,
+html[data-theme=paper] .sum b { font-family: var(--font-display); font-weight: 600; font-stretch: normal; font-size: 30px; letter-spacing: 0; }
+html[data-theme=paper] .tile-name { font-weight: 700; }
+html[data-theme=paper] .hx-pin { background: var(--ink); color: var(--sheet); }
+
+/* ---- cards (Today, kid tabs): white torn sheet, 6px coloured top strip from the cycle, no tilt */
+html[data-theme=paper] .card, html[data-theme=paper] .pv-card { --strip: var(--p1); } /* low specificity so the :nth-child cycle below wins */
+html[data-theme=paper] .card, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full) { z-index: 0; }
+html[data-theme=paper] .pv-card { position: relative; }
+html[data-theme=paper] .card:nth-child(6n+2), html[data-theme=paper] .pv-card:nth-child(6n+2) { --strip: var(--p2); }
+html[data-theme=paper] .card:nth-child(6n+3), html[data-theme=paper] .pv-card:nth-child(6n+3) { --strip: var(--p3); }
+html[data-theme=paper] .card:nth-child(6n+4), html[data-theme=paper] .pv-card:nth-child(6n+4) { --strip: var(--p4); }
+html[data-theme=paper] .card:nth-child(6n+5), html[data-theme=paper] .pv-card:nth-child(6n+5) { --strip: var(--p5); }
+html[data-theme=paper] .card:nth-child(6n+6), html[data-theme=paper] .pv-card:nth-child(6n+6) { --strip: var(--p6); }
+/* the strip sits on the sheet just inside the torn top edge (edge depth ≤ ~10px): on the rim, and 2px of it on the inset */
+html[data-theme=paper] .room::before, html[data-theme=paper] .card::before, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full)::before {
+  background: linear-gradient(var(--strip), var(--strip)) 0 0 / 100% 16px no-repeat, var(--sheet);
+}
+html[data-theme=paper] .card, html[data-theme=paper] .pv-card:not(.is-night):not(.is-day):not(.is-full) {
+  background: linear-gradient(var(--strip), var(--strip)) 14px 14px / calc(100% - 28px) 2px no-repeat,
+    linear-gradient(var(--sheet), var(--sheet)) 14px 14px / calc(100% - 28px) calc(100% - 28px) no-repeat;
+}
+html[data-theme=paper] .card, html[data-theme=paper] .pv-card { padding-top: 22px; }
+/* card titles in Fredoka (body and small text stay on the UI font) */
+html[data-theme=paper] .pv-h .label, html[data-theme=paper] .card > .label, html[data-theme=paper] .pv-card > .label, html[data-theme=paper] .h-chores .label, html[data-theme=paper] .h-shop .label, html[data-theme=paper] .h-status .label {
+  font-family: var(--font-display); font-weight: 600; font-stretch: normal; font-size: 18px; letter-spacing: .01em; text-transform: none; color: var(--ink);
+}
+
+/* ---- slideshow: kraft table under the photo's frame */
+html[data-theme=paper] .slide--framed { background: var(--bg); }
+html[data-theme=paper] .slide--polaroid .polaroid figcaption { font-family: var(--font-display); font-weight: 600; font-size: 22px; }
+html[data-theme=paper] .slide--polaroid .polaroid figcaption i { font-style: normal; }
+
+/* ---- kid tab (js/views/person.js): headings, chore / reward names and empty states in Fredoka 600 (no italics);
+   the header is a white torn sheet with a 6px strip, the person's colour only on the avatar and the strip */
+html[data-theme=paper] .pv .serif { font-family: var(--font-display); font-weight: 600; font-stretch: normal; letter-spacing: 0; }
+html[data-theme=paper] .pv .serif i, html[data-theme=paper] .pv i.serif { font-style: normal; }
+html[data-theme=paper] .pv .pv-empty { font-family: var(--font-display); font-weight: 600; font-stretch: normal; font-style: normal; font-size: 22px; letter-spacing: .01em; color: var(--ink-soft); }
+html[data-theme=paper] .pv .pv-chore-t, html[data-theme=paper] .pv .pv-reward-t { font-family: var(--font-display); font-weight: 600; font-stretch: normal; letter-spacing: .01em; }
+html[data-theme=paper] .pv .pv-empty i { font-style: normal; }
+html[data-theme=paper] .pv-top { position: relative; z-index: 0; border-radius: 0; color: var(--ink); padding: 22px 26px 14px;
+  background: linear-gradient(var(--c), var(--c)) 14px 14px / calc(100% - 28px) 2px no-repeat,
+    linear-gradient(var(--sheet), var(--sheet)) 14px 14px / calc(100% - 28px) calc(100% - 28px) no-repeat; }
+html[data-theme=paper] .pv-top::before, html[data-theme=paper] .pv-top::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; pointer-events: none; }
+html[data-theme=paper] .pv-top::before { z-index: -1; background: linear-gradient(var(--c), var(--c)) 0 0 / 100% 16px no-repeat, var(--sheet); -webkit-mask-box-image: url(../paper/tear-b.png) 24 / 24px round; }
+html[data-theme=paper] .pv-top::after { z-index: -2; background: rgba(43, 33, 24, .18); transform: translate(3px, 4px); -webkit-mask-box-image: url(../paper/tear-b-rim.png) 24 / 24px round; }
+html[data-theme=paper] .pv-top .avatar { background: var(--c); color: var(--c-ink); }
+/* text on a person's colour: paper ink or white, whichever passes (App.pstyle sets --c-ink-p next to the inline --c-ink) */
+html[data-theme=paper] [style*="--c-ink-p"] { --c-ink: var(--c-ink-p) !important; }
+html[data-theme=paper] .seg button .num { opacity: .85; } /* counts in the switchers (Shopping stores) stay ≥4.5:1 */
+html[data-theme=paper] .pv-top h1 { font-size: 46px; }
+html[data-theme=paper] .pv-mini b { font-family: var(--font-display); font-weight: 600; font-stretch: normal; }
+/* kid-tab big readings (Outside temp, My stars, jobs x / y) in Fredoka 600 like Home's readings */
+html[data-theme=paper] .pv-wx-main b, html[data-theme=paper] .pv-bigstar b, html[data-theme=paper] .pv-h b.num { font-family: var(--font-display); font-weight: 600; font-stretch: normal; letter-spacing: 0; }
+html[data-theme=paper] .pv-h b.num { font-size: 30px; }
+/* gold star counts (chore chips, "waiting" line, jar goal): darker gold so they pass 4.5:1 on kraft (5.6) and the sheet (7.7) */
+html[data-theme=paper] .pv-chore-s, html[data-theme=paper] .pv-pend, html[data-theme=paper] .pv-jar-goal small { color: #6E4C00; }
+/* kid-tab avatar initial and the Outside card's what-to-wear line in Fredoka too */
+html[data-theme=paper] .pv .avatar, html[data-theme=paper] .pv .pv-wear { font-family: var(--font-display); font-weight: 600; font-stretch: normal; }
+/* kid tab: pending stars, jar count, "change", reward names in the jar / goal picker and the cost chips in Fredoka too */
+html[data-theme=paper] .pv .pv-pend, html[data-theme=paper] .pv .pv-jar-goal small, html[data-theme=paper] .pv .pv-jar-goal b, html[data-theme=paper] .pv .pv-link,
+html[data-theme=paper] .pv .pv-goal small, html[data-theme=paper] .pv .pv-cost, html[data-theme=paper] .pv .pv-reward-t small { font-family: var(--font-display); font-weight: 600; font-stretch: normal; letter-spacing: .01em; }

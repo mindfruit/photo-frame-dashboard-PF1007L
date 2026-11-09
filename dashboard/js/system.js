@@ -3,7 +3,12 @@
   'use strict';
   var D = window.DATA, $ = App.$;
 
-  function img(seed, w, h) { return 'https://picsum.photos/seed/' + seed + '/' + w + '/' + h; }
+  // Local-only: pictures always come from our own server (a /photos/... path). There are no demo pictures any more
+  // (they used to be fetched from a remote image host); anything else is '' and gets no <img>.
+  function img(seed) {
+    seed = String(seed || '');
+    return seed.charAt(0) === '/' && seed.charAt(1) !== '/' ? seed : '';
+  }
   App.img = img;
 
   // ------------------------------------------------------------ full-screen takeovers
@@ -27,7 +32,7 @@
   App.doorbell = function () {
     var now = App.now();
     var el = takeover(
-      '<div class="tk-cam"><img src="' + img('visitor-porch', 1280, 800) + '" alt=""><span class="tk-live"><i></i>LIVE · Front Porch</span></div>' +
+      '<div class="tk-cam"><span class="tk-live"><i></i>LIVE · Front Porch</span></div>' +
       '<div class="tk-door">' +
       '  <div class="label label--light">' + App.icon('bell', 20) + ' Doorbell · ' + App.fmt.time(now) + '</div>' +
       '  <h1 class="serif tk-title">Someone’s at<br>the front door</h1>' +

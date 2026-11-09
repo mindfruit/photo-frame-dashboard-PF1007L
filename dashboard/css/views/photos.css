@@ -2,6 +2,8 @@
 .slide { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #1A1917; }
 .slide img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 .slide img.is-broken { visibility: hidden; }
+/* js/slideshow.js capUp(): a small picture at ≤2× its own size, centred (width/height/margins set inline) */
+.slide img.is-small { position: absolute; top: 50%; left: 50%; transform: none; object-fit: contain; }
 .kb { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: linear-gradient(135deg, #3B3934, #111); }
 .blurfill { display: none; }
 .slide--fit .fitimg { position: absolute; top: 0; left: 50%; width: auto; height: 100%; transform: translateX(-50%); object-fit: contain; }
@@ -18,7 +20,7 @@
   box-shadow: 0 30px 70px rgba(0, 0, 0, .55);
   translate: -50% -52%;
 }
-.polaroid-img { width: 660px; height: 470px; overflow: hidden; background: #ddd; }
+.polaroid-img { position: relative; width: 660px; height: 470px; overflow: hidden; background: #ddd; }
 .polaroid--p .polaroid-img { width: 420px; height: 560px; }
 .polaroid figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; padding: 16px 6px 20px; color: var(--ink); font-size: 30px; }
 
@@ -40,8 +42,10 @@
 .ph-zone--l { left: 0; width: 22%; }
 .ph-zone--c { left: 22%; width: 56%; }
 .ph-zone--r { right: 0; width: 22%; }
-.ph-top { position: absolute; top: 20px; right: 20px; z-index: 4; }
-.ph-bottom { position: absolute; right: 24px; bottom: 28px; z-index: 4; display: flex; gap: 10px; }
+.ph-top { position: absolute; top: 20px; right: 20px; z-index: 4; transition: opacity .4s; }
+/* the mode pill + bottom buttons fade after a few seconds; a tap brings them back (js/views/photos.js) */
+.photos.is-calm .ph-top, .photos.is-calm .ph-bottom { opacity: 0; pointer-events: none; }
+.ph-bottom { position: absolute; right: 24px; bottom: 28px; z-index: 4; display: flex; gap: 10px; transition: opacity .4s; }
 .ph-btn {
   height: var(--tap); min-width: var(--tap); padding: 0 17px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -52,3 +56,41 @@
 .ph-btn--fav { padding: 0 24px 0 20px; }
 .ph-btn--fav.is-on { background: #E4007C; }
 .ph-btn--fav.is-on .i { fill: currentColor; }
+
+/* Per-source frame styles (js/slideshow.js BUILD.framed). Static only: fixed tilt, no filters, no animated layers.
+   Sizes are stage px (the stage is always 1280×800, scaled to the screen): mat + photo ≤ 92% of the 800px height. */
+.slide--framed { display: flex; align-items: center; justify-content: center; background: #1A1917; }
+.fr { position: relative; z-index: 0; flex: none; display: flex; flex-direction: column; align-items: center; max-width: calc(100% - 48px); max-height: calc(100% - 48px); }
+/* js/slideshow.js fitFrame() sizes the photo so the whole mat fits the slide minus 48px (the CSS caps below are only the pre-load fallback) */
+.slide .fr.is-fit img { flex: none; max-width: none; max-height: none; }
+.slide .fr img { width: auto; height: auto; max-width: 1040px; object-fit: contain; object-position: 50% 50%; }
+.fr-cap { align-self: stretch; width: 0; min-width: 100%; font-family: 'Fredoka', var(--sans); font-weight: 600; color: #2B2118; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* polaroid: off-white border 14px sides/top, 56px bottom with the caption */
+.fr--polaroid { background: #FFFDF7; padding: 14px 14px 0; box-shadow: 0 4px 10px rgba(0, 0, 0, .18); }
+.slide .fr--polaroid img { max-height: 666px; }
+.fr--polaroid .fr-cap { height: 56px; line-height: 56px; font-size: 20px; padding: 0 6px; }
+.fr--polaroid:not(.fr--cap)::after { content: ''; display: block; height: 56px; }
+/* torn paper: coloured mat (--mat) with a torn mask on ::before, its shadow on ::after; the photo itself is never masked */
+.fr--torn { padding: 20px; background: linear-gradient(var(--mat, #F7CF4D), var(--mat, #F7CF4D)) 14px 14px / calc(100% - 28px) calc(100% - 28px) no-repeat; }
+.fr--torn::before, .fr--torn::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+/* seam-free 9-slice: the mat's own background is inset 14px; ::before is only the torn rim (no `fill`), ::after its shadow */
+.fr--torn::before { z-index: -1; background: var(--mat, #F7CF4D); -webkit-mask-box-image: url(../paper/tear-a.png) 24 / 24px round; }
+.fr--torn::after { z-index: -2; background: rgba(43, 33, 24, .18); transform: translate(3px, 4px); -webkit-mask-box-image: url(../paper/tear-a-rim.png) 24 / 24px round; }
+.fr--t2::before { -webkit-mask-box-image: url(../paper/tear-b.png) 24 / 24px round; }
+.fr--t2::after { -webkit-mask-box-image: url(../paper/tear-b-rim.png) 24 / 24px round; }
+.fr--t3::before { -webkit-mask-box-image: url(../paper/tear-c.png) 24 / 24px round; }
+.fr--t3::after { -webkit-mask-box-image: url(../paper/tear-c-rim.png) 24 / 24px round; }
+.slide .fr--torn img { max-height: 696px; }
+.slide .fr--torn.fr--cap img { max-height: 660px; }
+.fr--torn .fr-cap { height: 36px; line-height: 36px; padding-top: 4px; font-size: 20px; }
+@media (max-height: 640px) {
+  .fr--polaroid .fr-cap, .fr--polaroid:not(.fr--cap)::after { height: 40px; line-height: 40px; }
+  .slide .fr--polaroid img { max-height: 682px; }
+}
+
+/* No photos (none yet, or every source off): a quiet note in the slideshow's place (js/slideshow.js clear()) */
+.ss-empty { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 20px; background: #1A1917; color: rgba(255, 255, 255, .72); }
+.ss-empty b { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1.05; color: rgba(255, 255, 255, .86); }
+.ss-empty span { font-size: 18px; font-weight: 600; }
+.h-photo-stage .ss-empty b { font-size: 26px; }
+.h-photo-stage .ss-empty span { font-size: 15px; }

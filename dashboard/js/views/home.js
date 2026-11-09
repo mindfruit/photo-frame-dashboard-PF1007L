@@ -121,7 +121,7 @@
   function status() {
     var lights = D.devices.filter(function (d) { return d.type === 'light' && d.on; }).length;
     var unlocked = D.devices.filter(function (d) { return d.type === 'lock' && !d.locked; });
-    var garage = D.devices.filter(function (d) { return d.type === 'garage'; })[0];
+    var garage = D.devices.filter(function (d) { return d.type === 'garage'; })[0] || { state: 'closed' };
     var secure = !unlocked.length && garage.state === 'closed';
     var secText = secure ? 'All locked' : (garage.state !== 'closed' ? 'Garage open' : unlocked[0].name + ' unlocked');
     return '<div class="label">Home</div>' +
@@ -143,6 +143,7 @@
   }
 
   function photoCaption(s) {
+    if (!s) { V.el.querySelector('.h-photo-cap').innerHTML = ''; return; } // this screen has no photos
     var m = App.photoMeta(s.photos[0]);
     V.el.querySelector('.h-photo-cap').innerHTML = '<b>' + (m.onThisDay ? 'On this day · ' : '') + m.kicker + '</b><span>' + App.esc(m.place) + '</span>';
   }
@@ -167,7 +168,7 @@
           var g = e.target.closest('[data-go]');
           if (g) App.go(g.dataset.go);
         });
-        V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, interval: 12000, onChange: photoCaption });
+        V.slides = new App.Slideshow(el.querySelector('.h-photo-stage'), { layout: 'cover', captions: false, frames: false, interval: 12000, onChange: photoCaption });
       }
       paint();
       V.slides.start();

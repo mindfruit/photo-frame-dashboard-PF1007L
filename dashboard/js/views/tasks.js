@@ -3,7 +3,7 @@
   'use strict';
   var D = window.DATA;
   var V = { el: null, routine: null, pending: {} };
-  var LANES = ['alex', 'jordan', 'maya', 'otto', 'any'];
+  function lanes() { return D.people.map(function (p) { return p.id; }).concat(['any']); }
 
   function routine() { return V.routine ? D.routines.filter(function (r) { return r.id === V.routine; })[0] : App.currentRoutine(); }
   function listFor(who, r) {
@@ -13,7 +13,7 @@
 
   function row(c, p) {
     var pend = V.pending[c.id];
-    return '<button class="ch' + (c.done ? ' is-done' : '') + (pend ? ' is-checking' : '') + (c.overdue && !c.done ? ' is-overdue' : '') + '" data-ch="' + c.id + '">' +
+    return '<button class="ch' + (c.done ? ' is-done' : '') + (c.done && c.pending ? ' is-pending' : '') + (pend ? ' is-checking' : '') + (c.overdue && !c.done ? ' is-overdue' : '') + '" data-ch="' + c.id + '">' +
       '<span class="ch-emoji">' + c.emoji + '<span class="ch-check"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></span>' +
       '<span class="ch-text"><b>' + App.esc(c.title) + '</b>' +
       (c.overdue && !c.done ? '<small class="ch-late">Overdue</small>' : c.stars ? '<small>' + App.icon('star', 14, 'i--fill') + c.stars + (c.doneBy ? ' · ' + App.person(c.doneBy).name : '') + '</small>' : (c.doneBy ? '<small>by ' + App.person(c.doneBy).name + '</small>' : '')) +
@@ -58,7 +58,7 @@
       '<div class="seg">' + D.routines.map(function (x) { return '<button class="' + (x.id === r.id ? 'is-on' : '') + '" data-r="' + x.id + '">' + x.name + '</button>'; }).join('') + '</div>' +
       '<div class="t-progress"><span class="num">' + done + '<small>/' + inR.length + '</small></span><div class="t-bar"><i style="width:' + (inR.length ? done / inR.length * 100 : 0) + '%"></i></div><span class="label">done</span></div>' +
       '</header>' +
-      '<div class="ch-lanes">' + LANES.map(function (w) { return lane(w, r); }).join('') + '</div>' +
+      '<div class="ch-lanes">' + lanes().map(function (w) { return lane(w, r); }).join('') + '</div>' +
       '</div>';
   }
 
@@ -71,22 +71,27 @@
       c.done = true;
       if (by) c.doneBy = by;
       var earner = D.stars[c.who] != null ? c.who : (by && D.stars[by] != null ? by : null);
-      if (earner && c.stars) D.stars[earner] += c.stars;
+      var waits = !!(earner && c.stars && App.person(earner).approval);
+      c.pending = waits; // with approvals on, stars land once a parent says OK
+      D.api('POST', 'chores/' + c.id + '/complete', { by: by || null }).catch(function () {
+        App.toast('Could not save — is the server running?', { icon: 'check' }); D.reload();
+      });
       render();
       App.emit('data');
       var laneList = listFor(c.who, r);
       var laneDone = laneList.every(function (x) { return x.done; });
       var allDone = D.chores.filter(function (x) { return x.r === r.id; }).every(function (x) { return x.done; });
+      App.sound(allDone ? 'cheer' : 'ding');
       if (allDone) {
         App.toast('<b>' + r.name + ' routine complete!</b> Everyone crushed it.', { icon: 'star', ms: 5000 });
         return;
       }
-      App.toast('<b>' + App.esc(c.title) + '</b> done' + (earner && c.stars ? ' · +' + c.stars + '★ ' + App.person(earner).name : ''), {
+      App.toast('<b>' + App.esc(c.title) + '</b> done' + (earner && c.stars ? ' · +' + c.stars + '★ for ' + App.person(earner).name + (waits ? ' once a grown-up says OK' : '') : ''), {
         icon: 'check',
         undo: function () {
           c.done = false;
           delete c.doneBy;
-          if (earner && c.stars) D.stars[earner] -= c.stars;
+          D.api('DELETE', 'chores/' + c.id + '/complete').catch(function () { D.reload(); });
           render();
           App.emit('data');
         }
@@ -119,10 +124,12 @@
       var c = D.chores.filter(function (x) { return x.id === t.dataset.ch; })[0];
       if (!c || V.pending[c.id]) return;
       if (c.done) {
+        if (!c.pending && c.stars && D.stars[c.who] != null) {
+          return App.toast('Already approved — a grown-up can undo it in the parent page', { icon: 'star' });
+        }
         c.done = false;
-        var earner = D.stars[c.who] != null ? c.who : (c.doneBy && D.stars[c.doneBy] != null ? c.doneBy : null);
-        if (earner && c.stars) D.stars[earner] -= c.stars;
         delete c.doneBy;
+        D.api('DELETE', 'chores/' + c.id + '/complete').catch(function () { D.reload(); });
         render();
         App.emit('data');
         return;
