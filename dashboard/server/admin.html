@@ -1371,8 +1371,7 @@ function boardPage() {
   html += '<section id="board-types"><h2>Card types</h2><p class="hint">Order of importance: Alert › Personal › Live = Scheduled › Ambient. A higher card never waits behind a lower one. Times in seconds; weights are the share of turns (a screen can override them).</p>' +
     '<form class="row" data-board="types" style="border-top:0"><div class="wg-grid">' + B_TYPES.map(function (t) {
       var d = BS.types[t[0]], base = BS.typeBase[t[0]], f = function (k, label) { return k in base ? '<label class="narrow">' + label + '<input type="number" step="any" name="' + t[0] + '.' + k + '" value="' + esc(d[k]) + '"></label>' : ''; };
-      return card(t[1], t[2], f('dwell', 'Dwell s') + f('ttl', 'Lasts s') + f('weight', 'Weight') + f('stale', 'Stale after s') + f('half_life', 'Half-life s') + f('floor', 'Min share') +
-        '<label class="narrow">Accent<select name="' + t[0] + '.accent">' + bOpt(BS.accents.map(function (a) { return [a, a || 'none']; }), d.accent || '') + '</select></label>');
+      return card(t[1], t[2], f('dwell', 'Dwell s') + f('ttl', 'Lasts s') + f('weight', 'Weight') + f('stale', 'Stale after s') + f('half_life', 'Half-life s') + f('floor', 'Min share'));
     }).join('') + '</div><div class="form-foot"><button class="primary">Save card types</button></div></form></section>';
   // 6. token for Home Assistant / Shortcuts
   html += '<section id="board-token"><h2>Post from Home Assistant or Shortcuts</h2><p class="hint">POST to <code>/api/board/message</code> with the parent PIN (<code>X-PIN</code>) or this token (<code>Authorization: Bearer …</code>). Body: <code>{"text":"…","screen":"all","sticky":false,"urgent":false,"ttl_hours":12}</code>.</p>' +
@@ -1396,12 +1395,18 @@ function boardScreenForm(s) {
     '<form class="row" data-board="screen" data-id="' + esc(s.id) + '" style="border-top:0"><div class="wg-grid">' +
     card('Tab', s.profile ? 'Screens get this when the profile is applied.' : 'Show the Flipboard tab on this screen, and where.',
       '<label class="narrow">Flipboard on<input type="checkbox" name="enabled"' + (c.enabled ? ' checked' : '') + '></label><label>Position<select name="tab_after">' + bOpt(after, c.tab_after || '') + '</select></label>') +
-    card('Look', 'Grid size, colours, the flip animation, and full screen (the menu hides on the Flipboard tab; a tap shows it for 8 seconds).',
+    card('Look', 'Grid size, colours, font, the flip animation, and full screen (the menu hides on the Flipboard tab; hold a finger on the board to show it for 8 seconds).',
       '<label>Grid<select name="grid">' + bOpt([['22x6', '22 × 6 (Vestaboard)'], ['custom', 'Custom']], c.grid) + '</select></label>' +
       '<label class="narrow">Columns<input type="number" name="cols" min="8" max="40" value="' + esc(c.cols) + '"></label><label class="narrow">Rows<input type="number" name="rows" min="2" max="16" value="' + esc(c.rows) + '"></label>' +
       '<label>Colours<select name="palette">' + bOpt([['standard', 'Standard'], ['bright', 'Bright (kids)']], c.palette) + '</select></label>' +
       '<label class="narrow">Flip<input type="checkbox" name="flip"' + (c.flip ? ' checked' : '') + '></label><label class="narrow">Flips at once<input type="number" name="flip_cap" min="1" max="64" value="' + esc(c.flip_cap) + '"></label>' +
       '<label class="narrow">Full screen (hide menu)<input type="checkbox" name="full"' + (c.full !== false ? ' checked' : '') + '></label>' +
+      '<label>Font<select name="font">' + bOpt(Object.keys(BS.fonts || { solari: 'Solari' }).map(function (k) { return [k, BS.fonts[k]]; }), c.font || 'solari') + '</select></label>' +
+      '<label>Flap shade<select name="shade">' + bOpt([['-2', 'Darkest'], ['-1', 'Darker'], ['0', 'Normal'], ['1', 'Lighter'], ['2', 'Lightest']], String(c.shade || 0)) + '</select></label>' +
+      '<label class="narrow">Gestures<input type="checkbox" name="gestures"' + (c.gestures !== false ? ' checked' : '') + '></label>' +
+      '<label class="narrow">Flipboard is the night screen<input type="checkbox" name="night_screen"' + (c.night_screen !== false ? ' checked' : '') + '></label>' +
+      '<small class="full hint">Night screen: in quiet hours the Flipboard stays up, dimmed, with urgent alerts or the time and weather. Off: quiet hours switch to the night clock as before.</small>' +
+      '<small class="full hint">Gestures: tap for the next card (a tap on an alert dismisses it on this screen); hold for the menu. Off: only hold for the menu.</small>' +
       (s.profile ? '' : '<small class="full ' + (c.flip && s.flip3d === 0 ? 'err' : 'hint') + '">' + esc(flipNote(s)) + '</small>')) +
     card('Card types', 'Which kinds of cards run here, and their share of turns (blank = default).',
       B_TYPES.map(function (t) { return '<label class="narrow">' + t[1] + '<input type="checkbox" name="type.' + t[0] + '"' + (c.types[t[0]] !== false ? ' checked' : '') + '></label>'; }).join('') +
@@ -1426,7 +1431,6 @@ function boardSourceForm(k) {
     '<span class="card-desc">' + esc(k.notes) + '</span><div class="wg-fields">' + fields +
     (k.needsKey ? '<label>API key<input type="password" autocomplete="off" name="key" placeholder="' + (k.key_set ? 'Saved (' + esc(k.key) + ') — blank keeps it' : 'Paste your key') + '"></label>' + (k.key_set ? '<label class="narrow">Remove key<input type="checkbox" name="clear_key"></label>' : '') : '') +
     '<label class="narrow">Dwell s<input type="number" name="dwell" min="3" value="' + esc(p.dwell || '') + '" placeholder="' + esc(BS.types[k.type].dwell) + '"></label>' +
-    '<label class="narrow">Accent<select name="accent">' + bOpt([['', 'type default']].concat(BS.accents.filter(Boolean).map(function (a) { return [a, a]; })), p.accent || '') + '</select></label>' +
     '<label class="narrow">Priority<input type="number" name="priority" min="-10" max="10" value="' + esc(p.priority || '') + '" placeholder="0"></label>' +
     stat + '<div class="form-foot"><button class="primary">Save</button></div></div></form>';
 }
@@ -1444,7 +1448,7 @@ document.addEventListener('submit', function (e) {
     return boardSave(api('POST', 'board/message', body), f, 'Posted').then(function (r) { if (r) { el.text.value = ''; el.sticky.checked = el.urgent.checked = false; } });
   }
   if (kind === 'screen') {
-    var sc = { enabled: chk('enabled'), tab_after: val('tab_after'), grid: val('grid'), cols: val('cols'), rows: val('rows'), palette: val('palette'), flip: chk('flip'), flip_cap: val('flip_cap'), full: chk('full'), types: {}, weights: {}, sources: {} };
+    var sc = { enabled: chk('enabled'), tab_after: val('tab_after'), grid: val('grid'), cols: val('cols'), rows: val('rows'), palette: val('palette'), flip: chk('flip'), flip_cap: val('flip_cap'), full: chk('full'), font: val('font'), shade: +val('shade'), gestures: chk('gestures'), night_screen: chk('night_screen'), types: {}, weights: {}, sources: {} };
     B_TYPES.forEach(function (t) { sc.types[t[0]] = chk('type.' + t[0]); });
     ['personal', 'live', 'scheduled', 'ambient'].forEach(function (t) { sc.weights[t] = val('w.' + t); });
     BS.kinds.forEach(function (k) { var v = val('src.' + k.kind); sc.sources[k.kind] = { on: v === '' ? null : v === '1' }; });
@@ -1454,7 +1458,7 @@ document.addEventListener('submit', function (e) {
     return boardSave(api('PUT', 'board/config', b), f, 'Flipboard saved');
   }
   if (kind === 'src') {
-    var k = BS.kinds.filter(function (x) { return x.kind === f.dataset.kind; })[0], s = { enabled: chk('enabled'), opts: {}, dwell: val('dwell'), accent: val('accent'), priority: val('priority') };
+    var k = BS.kinds.filter(function (x) { return x.kind === f.dataset.kind; })[0], s = { enabled: chk('enabled'), opts: {}, dwell: val('dwell'), priority: val('priority') };
     k.fields.forEach(function (fd) { var n = 'opt.' + fd.k; if (!el[n]) return; s.opts[fd.k] = fd.type === 'check' ? el[n].checked : fd.type === 'lines' ? el[n].value : el[n].value.trim(); });
     var body2 = { sources: {} }; body2.sources[k.kind] = s;
     if (k.needsKey && val('key')) { body2.keys = {}; body2.keys[k.kind] = val('key'); }

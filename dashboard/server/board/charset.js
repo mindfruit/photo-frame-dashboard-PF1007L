@@ -122,18 +122,34 @@ export function gridText(grid) {
 // ------------------------------------------------------------------ palettes
 // bg = the letter tile, text = default glyph colour, fg = per-character colours, tile = solid colour tiles.
 // Every text and fg colour must read at >= 4.5:1 on bg (checked in test.js). Night ones match css/night.css.
+// bg = flap top half, bg2 = bottom half (a touch darker), hinge = the line across the middle. Every letter colour is
+// >= 4.5:1 on both halves; colour tiles are >= 4.5:1 (day) / >= 3:1 (night, dimmed on purpose) against the flap (test.js).
 export const PALETTES = {
-  standard: { bg: '#1B1A18', text: '#EDE9E0', fg: { red: '#FF7A6E', orange: '#FFA552', yellow: '#F7D154', green: '#6CCB7E', blue: '#7DB8F2', violet: '#C0A3F5', white: '#FFFFFF' },
-    tile: { 63: '#D7372A', 64: '#EE8A2A', 65: '#F2C230', 66: '#2E9E4F', 67: '#2563C9', 68: '#7448C0', 69: '#ECE9E2', 70: '#0E0E0D', 71: '#ECE9E2' } },
-  bright: { bg: '#141414', text: '#FFFFFF', fg: { red: '#FF5C5C', orange: '#FF9F1C', yellow: '#FFE94D', green: '#3DEB7A', blue: '#4CC3FF', violet: '#D68CFF', white: '#FFFFFF' },
+  standard: { bg: '#121211', bg2: '#0E0E0D', hinge: '#000000', text: '#EDE9E0', fg: { red: '#FF7A6E', orange: '#FFA552', yellow: '#F7D154', green: '#6CCB7E', blue: '#7DB8F2', violet: '#C0A3F5', white: '#FFFFFF' },
+    tile: { 63: '#ED3D2E', 64: '#EE8A2A', 65: '#F2C230', 66: '#2E9E4F', 67: '#2E7AF7', 68: '#975EFA', 69: '#ECE9E2', 70: '#0E0E0D', 71: '#ECE9E2' } },
+  bright: { bg: '#111111', bg2: '#0D0D0D', hinge: '#000000', text: '#FFFFFF', fg: { red: '#FF5C5C', orange: '#FF9F1C', yellow: '#FFE94D', green: '#3DEB7A', blue: '#4CC3FF', violet: '#D68CFF', white: '#FFFFFF' },
     tile: { 63: '#FF3B30', 64: '#FF9500', 65: '#FFD60A', 66: '#30D158', 67: '#0A84FF', 68: '#BF5AF2', 69: '#FFFFFF', 70: '#000000', 71: '#FFFFFF' } },
-  // night dashboard (dim): muted, like css/night.css (--ink #C2A780 on #15110D)
-  night: { bg: '#1C1712', text: '#C2A780', fg: { red: '#D98C7A', orange: '#D29A5E', yellow: '#CDB66A', green: '#8FB38F', blue: '#8FAAC4', violet: '#B39CC4', white: '#D6C8B0' },
-    tile: { 63: '#6B2E22', 64: '#6E4A22', 65: '#6B5C2A', 66: '#2F4A33', 67: '#2E3D4B', 68: '#433650', 69: '#8A7A62', 70: '#0D0A07', 71: '#8A7A62' } },
+  // night (dim): muted letters like css/night.css (--ink #C2A780). The flaps stay hue-free near-black: a dimmed panel lifts
+  // near-blacks, so any warmth in the flap shows as brown/red. Warmth lives only in the letters and colour tiles.
+  night: { bg: '#0E0E0D', bg2: '#0A0A0A', hinge: '#000000', text: '#C2A780', fg: { red: '#D98C7A', orange: '#D29A5E', yellow: '#CDB66A', green: '#8FB38F', blue: '#8FAAC4', violet: '#B39CC4', white: '#D6C8B0' },
+    tile: { 63: '#9F4533', 64: '#835828', 65: '#6F602C', 66: '#436A49', 67: '#4B637A', 68: '#6D5882', 69: '#8A7A62', 70: '#090909', 71: '#8A7A62' } },
   // night dashboard, warm red (bedrooms): no blue or green light, every colour becomes an amber/red tone
-  'night-red': { bg: '#140A07', text: '#C0662E', fg: { red: '#D2553A', orange: '#C8742E', yellow: '#C98A3C', green: '#B8703A', blue: '#BC703F', violet: '#C26A44', white: '#CC7A44' },
-    tile: { 63: '#5A1E10', 64: '#5A3010', 65: '#5E3A12', 66: '#3E2410', 67: '#36200F', 68: '#3E1F14', 69: '#6A3A1E', 70: '#0A0503', 71: '#6A3A1E' } }
+  'night-red': { bg: '#0B0A0A', bg2: '#080707', hinge: '#000000', text: '#C0662E', fg: { red: '#D2553A', orange: '#C8742E', yellow: '#C98A3C', green: '#B8703A', blue: '#BC703F', violet: '#C26A44', white: '#CC7A44' },
+    tile: { 63: '#AB391F', 64: '#924E1A', 65: '#885419', 66: '#8C5224', 67: '#8B5226', 68: '#954B30', 69: '#904F29', 70: '#070606', 71: '#904F29' } }
 };
+
+// Flap shade (per screen, admin › Flipboard › Look): -2 darkest … 0 normal … 2 lightest. Moves both flap halves by the same
+// SHADE_STEP levels per step (so the top/bottom gap and the hue stay); the hinge, letters and tiles don't change.
+export const SHADES = [-2, -1, 0, 1, 2];
+export const SHADE_STEP = 2;
+export function shade(pal, n) {
+  const d = (SHADES.includes(n) ? n : 0) * SHADE_STEP;
+  if (!d) return pal;
+  const mv = (hex) => '#' + [1, 3, 5].map((i) => Math.min(255, Math.max(0, parseInt(hex.slice(i, i + 2), 16) + d)).toString(16).padStart(2, '0')).join('').toUpperCase();
+  return Object.assign({}, pal, { bg: mv(pal.bg), bg2: mv(pal.bg2) });
+}
+// Flap fonts (public/fonts/flap-*.woff2, OFL): id -> label. 'solari' is the default (closest to airport boards / Vestaboard).
+export const FONTS = { solari: 'Solari (Roboto Condensed Bold)', modern: 'Modern (Barlow Condensed SemiBold)', tall: 'Tall (Oswald SemiBold)' };
 export const ACCENTS = { red: '#E5483B', amber: '#F0A030', soft: '#9C8CD9', blue: '#4C8DF0', green: '#3FAE62' };
 
 export function contrast(a, b) {

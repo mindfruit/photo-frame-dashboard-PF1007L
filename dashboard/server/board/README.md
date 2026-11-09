@@ -83,3 +83,46 @@ can’t do 3D transforms (feature check, `-webkit-` included) the cells change i
   Domain (not copyrighted)”. 72 well-known verses plus short Proverbs, footnotes removed.
 * `data/quotes.json`: 33 sayings from Benjamin Franklin’s **The Way to Wealth** (1758; Project Gutenberg
   eBook #43855, the 1810 Darton edition). Public domain.
+
+## Look: flaps and fonts
+
+Flaps are near-black: the top half a touch lighter than the bottom, with a dark hinge line (`bg`, `bg2`, `hinge` per
+palette in `charset.js`). Letters are at least 4.5:1 on both halves in every palette. Colour tiles are at least 4.5:1 by
+day and at least 3:1 at night (night tiles are dimmed on purpose). The top/bottom gap is small (3–4 levels). Night flaps
+are hue-free (R, G and B within 2): the frames' dimmed panels lift near-blacks, so a warm flap reads brown or red; the
+warmth stays in the letters and tiles. `test.js` checks all of this, at every flap shade.
+
+Per-screen **Flap shade** (admin › Flipboard › Look): Darkest (-2) … Normal (0, default) … Lightest (2). Each step moves
+both halves by 2 levels (`CS.shade`); the hinge, letters and tiles stay as they are.
+
+Per-screen **Font** (admin › Flipboard › Look): `solari` (default, Roboto Condensed Bold), `modern` (Barlow Condensed
+SemiBold) or `tall` (Oswald SemiBold). The files are `public/fonts/flap-*.woff2` (OFL 1.1; licences are in
+`public/fonts/OFL-*.txt`). Each is subset to the board's characters, and its line metrics are rewritten so the caps sit
+centred in the line box (ascent − descent = cap height). Every letter, digit and mark therefore shares one cap line,
+centred on the hinge. Rebuild them with fontTools: instance the weight, subset, set hhea/typo/win metrics, and save as woff2.
+
+## Gestures (per screen, on by default)
+
+* **Tap:** next card now. A tap on an alert dismisses it on that screen only (`board_acks`, until the alert expires or
+  its source stops sending it). Debounced to 600 ms in the frame and on the server, and flips still run at most
+  *Flips at once* at a time. After a tap, the new card gets its normal dwell.
+* **Hold for 700 ms:** shows the menu rail for 8 s (full screen).
+* **Two or more fingers:** ignored, so the kiosk app's two-finger 1.5 s hold works as before.
+* **Gestures off:** a tap does nothing; holding still shows the menu.
+* **First-run hint:** "tap for next · hold for menu", shown on up to 3 opens of the Flipboard on a screen and gone for good
+  after the first tap or hold there (`localStorage` `pf.flipHint.<screen>` = count, then `done`; `js/views/board-hint.js`).
+* No focus ring, tap flash or text selection on the board, and no coloured ring around it: the card colour lives in the tiles.
+
+`POST /api/board/tap {"screen":"<id>"}` (LAN, no PIN, like `GET /api/board`) returns `{action: next|ack|debounced|gestures-off|off, board}`.
+Frames send `&ui=<bundle hash>` when they poll. The server logs `[board] <screen> runs <hash>` when that changes, so you
+can see whether a frame has reloaded onto a new build.
+
+## When there is nothing to show, and at night
+
+* **Fallback card:** when no card is eligible (an empty queue, or quiet hours letting only urgent alerts through), the
+  board shows the time and the weather from the server's own weather cache, e.g. `11:58 PM` / `42° CLEAR`. If there's
+  no weather, or it's more than 3 h old, it shows the time only. The server recomposes every 2 s, so the frame gets one
+  change a minute and only the changed tiles flip.
+* **Flipboard is the night screen** (per screen, on by default): while the Flipboard tab is showing, the frame never
+  goes back to Today or the slideshow. In quiet hours it stays on the Flipboard, dimmed with the night colours
+  (`html.board-night`), showing urgent alerts or the clock card. With this off, quiet hours switch to the night clock as before.

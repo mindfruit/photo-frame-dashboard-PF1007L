@@ -3,16 +3,24 @@
 .view[data-view="board"] { background: #0B0B0A; }
 .bd-wrap { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; }
+/* no focus ring, tap flash, text selection or callout on the board: taps and holds are gestures here */
+.view[data-view="board"], .view[data-view="board"] * { outline: none; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .bd { padding: 16px; background: #050505; border: 6px solid #050505; border-radius: 16px; position: relative; }
 .bd-row { white-space: nowrap; font-size: 0; line-height: 0; }
 .bc { display: inline-block; position: relative; vertical-align: top; -webkit-perspective: 500px; perspective: 500px;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 700; }
+  font-family: 'flap-solari', 'Roboto Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; }
+/* Flap fonts: bundled (public/fonts, OFL, see the OFL-*.txt there), subset to the board's characters, never fetched remotely. */
+@font-face { font-family: 'flap-solari'; src: url(/fonts/flap-solari.woff2) format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'flap-modern'; src: url(/fonts/flap-modern.woff2) format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'flap-tall'; src: url(/fonts/flap-tall.woff2) format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+.bd.font-modern .bc { font-family: 'flap-modern', 'Barlow Condensed', 'Arial Narrow', sans-serif; }
+.bd.font-tall .bc { font-family: 'flap-tall', 'Oswald', 'Arial Narrow', sans-serif; }
 .bh { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; display: block; }
 .bt { top: 0; border-radius: 3px 3px 0 0; }
 .bb { bottom: 0; border-radius: 0 0 3px 3px; }
 .g { position: absolute; left: 0; right: 0; top: 0; display: block; text-align: center; font-style: normal; }
 .bb .g { top: -100%; }
-.bc:after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; margin-top: -1px; background: #000; z-index: 3; }
+.bc:after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; background: #000; z-index: 3; } /* the hinge (colour per palette) */
 .fl { z-index: 2; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .ft { -webkit-transform-origin: 50% 100%; transform-origin: 50% 100%; -webkit-animation: bdTop .14s ease-in both; animation: bdTop .14s ease-in both; }
 .fb { -webkit-transform-origin: 50% 0; transform-origin: 50% 0; -webkit-animation: bdBot .14s ease-out .14s both; animation: bdBot .14s ease-out .14s both; }
@@ -27,7 +35,7 @@
 .stage[data-mode="nightdash"] .view[data-view="board"] { background: #0F0B08; }
 .stage[data-mode="nightdash"] .bd { background: #0A0806; border-color: #0A0806; }
 /* Full screen (html.board-full, set by board.js on the Board tab): all black, no toasts, the rail slides away.
-   A tap on the board adds html.board-peek for 8 s: the rail slides back in over the board. Other tabs never get these. */
+   A long-press on the board adds html.board-peek for 8 s: the rail slides back in over the board. Other tabs never get these. */
 html.board-full, html.board-full body, html.board-full .stage { background: #000; }
 html.board-full .views { grid-column: 1 / span 2; grid-row: 1; }
 html.board-full .rail { position: absolute; top: 0; bottom: 0; left: 0; width: 76px; z-index: 50;
@@ -36,4 +44,11 @@ html.board-full.board-peek .rail { -webkit-transform: none; transform: none; box
 html.board-full .toasts { display: none; }
 html.board-full .view[data-view="board"], html.board-full .stage[data-mode="nightdash"] .view[data-view="board"] { background: #000; }
 html.board-full .bd, html.board-full .stage[data-mode="nightdash"] .bd { background: #000; }
-html.board-full .bd:not([class*="acc-"]) { border-color: #000; }
+html.board-full .bd { border-color: #000; }
+/* first-run gesture hint (board.js hint()) */
+.bd-hint { position: absolute; left: 0; right: 0; bottom: 28px; text-align: center; color: #8C8A84; font-size: 20px; letter-spacing: .08em;
+  pointer-events: none; opacity: 0; -webkit-transition: opacity .5s; transition: opacity .5s; z-index: 4; }
+.bd-hint.is-in { opacity: 1; }
+/* quiet hours on a "night screen" Flipboard: night colours (board.js) and a dim, warm background like night.css */
+html.board-night .view[data-view="board"], html.board-night.board-full .view[data-view="board"] { background: #000; }
+html.board-night .bd { opacity: .8; }

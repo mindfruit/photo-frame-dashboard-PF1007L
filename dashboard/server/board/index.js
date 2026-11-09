@@ -17,13 +17,20 @@ db.exec(`CREATE TABLE IF NOT EXISTS board_messages (  -- posted notes (admin / P
   expires_at INTEGER, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS board_cache (  -- last good grid per screen (shown after a restart until sources answer)
   screen_id TEXT PRIMARY KEY, grid_json TEXT NOT NULL, card_json TEXT, rendered_at INTEGER NOT NULL,
-  flip3d INTEGER, polled_at INTEGER);`);
+  flip3d INTEGER, polled_at INTEGER);
+CREATE TABLE IF NOT EXISTS board_acks (  -- alerts a screen's tap dismissed (that screen only), until the card expires or goes away
+  screen_id TEXT NOT NULL, card_key TEXT NOT NULL, until_at INTEGER, at INTEGER NOT NULL, PRIMARY KEY (screen_id, card_key));`);
 
 const PALETTE_NAMES = ['standard', 'bright'];
+const FONT_NAMES = Object.keys(CS.FONTS);
 const ACCENT_NAMES = ['', 'red', 'amber', 'soft', 'blue', 'green'];
 const ALL_TABS = ['home', 'calendar', 'tasks', 'shopping', 'photos', 'control', 'agents', 'kids']; // what "no tabs picked" shows
 export const SCREEN_DEFAULTS = {
   enabled: false, tab_after: '', grid: '22x6', cols: 22, rows: 6, flip: true, flip_cap: 8, palette: 'standard',
+  font: 'solari', // flap font (CS.FONTS)
+  shade: 0, // flap shade, -2 darker … 2 lighter (CS.shade)
+  gestures: true, // tap = next card (or dismiss an alert); long-press = menu. Off: only the long-press
+  night_screen: true, // quiet hours: stay on the Flipboard (dimmed, clock + weather) instead of the night clock
   full: true, // Full screen: on the Board tab the menu rail hides (a tap brings it back for a few seconds)
   types: { alert: true, personal: true, live: true, scheduled: true, ambient: true },
   weights: {}, // blank = the card type's default weight (admin › Flipboard › Card types)
@@ -109,7 +116,7 @@ function postedCards(now) {
 }
 
 // ------------------------------------------------------------------ compose
-const states = new Map(), last = new Map(), flip3d = new Map();
+const states = new Map(), last = new Map(), flip3d = new Map(), uiSeen = new Map(); // uiSeen: which frame bundle each screen runs
 function quietNow(id, now) {
   const d = !isProfile(id) && get('SELECT quiet_start, quiet_end FROM devices WHERE id = ?', id);
   const s = (d && d.quiet_start && d.quiet_end) ? d.quiet_start : getSetting('quiet_start'), e = (d && d.quiet_start && d.quiet_end) ? d.quiet_end : getSetting('quiet_end');
@@ -125,20 +132,24 @@ export function compose(id, now = Date.now(), quiet) {
   const sc = screenCfg(id);
   if (!sc.enabled) return null;
   const td = typeDefaults(), st = states.get(id) || (states.set(id, newState()), states.get(id));
-  const cards = postedCards(now);
+  let cards = postedCards(now);
   for (const s of screenSources(id)) { const e = store.get(s.hash); if (e) cards.push(...e.cards); }
+  cards = withoutAcked(id, cards, now);
   const q = quiet != null ? quiet : quietNow(id, now);
   const { card } = select(cards, st, now, { screen: id, types: sc.types, weights: sc.weights, quiet: q, defaults: td });
   const keys = new Set(cards.map((c) => c.key));
   for (const k of Object.keys(st.last)) if (!keys.has(k)) delete st.last[k]; // forget cards that are gone
   const { cols, rows } = dims(sc);
-  const grid = card ? CS.layout(card.lines, cols, rows, card.align).grid : CS.layout([], cols, rows).grid;
+  const shown = card || clockCard(now); // nothing to show (or quiet hours): the time and weather
+  const grid = CS.layout(shown.lines, cols, rows, shown.align).grid;
   const accent = card ? (card.accent != null ? card.accent : td[card.type].accent || '') : '';
   return {
     screen: id, cols, rows, cells: grid, quiet: q,
-    card: card ? { type: card.type, key: card.key, source: card.source, accent } : null,
+    card: { type: shown.type, key: shown.key, source: shown.source || 'clock', accent },
+    night: !!(q && sc.night_screen !== false), // the frame dims the board (night palette) and stays on it
     flip: !!sc.flip, flip_cap: Math.min(64, Math.max(1, +sc.flip_cap || 8)), palette: PALETTE_NAMES.includes(sc.palette) ? sc.palette : 'standard',
-    full: sc.full !== false
+    full: sc.full !== false, font: FONT_NAMES.includes(sc.font) ? sc.font : 'solari', gestures: sc.gestures !== false,
+    shade: CS.SHADES.includes(sc.shade) ? sc.shade : 0
   };
 }
 // Recompose every Board screen; returns the ids whose grid changed (those are cached + broadcast).
@@ -147,7 +158,7 @@ export function composeAll(now = Date.now()) {
   for (const id of boardScreens()) {
     const p = compose(id, now);
     if (!p) continue;
-    const sig = JSON.stringify([p.cells, p.card && p.card.key, p.card && p.card.accent, p.flip, p.flip_cap, p.palette, p.full]);
+    const sig = JSON.stringify([p.cells, p.card && p.card.key, p.card && p.card.accent, p.flip, p.flip_cap, p.palette, p.full, p.font, p.gestures, p.night, p.shade]);
     const prev = last.get(id);
     if (prev && prev.sig === sig) continue;
     p.at = now;
@@ -174,6 +185,56 @@ export async function tick(now = Date.now(), force = false) {
   } finally { ticking = false; }
 }
 
+// ------------------------------------------------------------------ fallback: the time and weather
+// When no card is eligible (an empty queue, or quiet hours letting only urgent alerts through) the board shows this:
+// "11:58 PM" / "42° CLEAR" from the server's own weather cache (no extra requests). No (or old) weather: the time only.
+// Only the minute changes from one minute to the next, so only those tiles flip.
+const SKY = { sun: 'CLEAR', moon: 'CLEAR', partly: 'PARTLY CLOUDY', cloud: 'CLOUDY', rain: 'RAIN', snow: 'SNOW', storm: 'STORM', fog: 'FOG' };
+export function clockCard(now) {
+  const d = new Date(now), h = d.getHours(), m = d.getMinutes();
+  const lines = [(h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM')];
+  const w = cache.weather;
+  if (w && w.now != null && (!w.updated || now - +new Date(w.updated) < 3 * 3600e3)) {
+    const sky = w.c && w.c[h] ? (SKY[w.c[h]] || String(w.c[h]).toUpperCase()) : '';
+    lines.push(w.now + '°' + (sky ? ' ' + sky : ''));
+  }
+  return { type: 'clock', key: 'clock', source: 'clock', lines };
+}
+
+// ------------------------------------------------------------------ taps on the frame (POST /api/board/tap, LAN, no PIN)
+// A tap on an alert dismisses it for that screen (board_acks, until the card expires or its source stops emitting it);
+// any other tap moves on to the next card now. 600 ms debounce per screen, so hammering doesn't pile up flips.
+function withoutAcked(id, cards, now) {
+  const rows = all('SELECT card_key, until_at FROM board_acks WHERE screen_id = ?', id);
+  if (!rows.length) return cards;
+  const keys = new Set(cards.map((c) => c.key)), acked = new Set();
+  for (const r of rows) {
+    if (!keys.has(r.card_key) || (r.until_at && now >= r.until_at)) run('DELETE FROM board_acks WHERE screen_id = ? AND card_key = ?', id, r.card_key); // gone: a new one shows again
+    else acked.add(r.card_key);
+  }
+  return acked.size ? cards.filter((c) => !acked.has(c.key)) : cards;
+}
+const lastTap = new Map();
+export function tap(id, now = Date.now()) {
+  const sc = screenCfg(id);
+  if (!sc.enabled) return { action: 'off' };
+  if (sc.gestures === false) return { action: 'gestures-off' };
+  if (now - (lastTap.get(id) || 0) < 600) return { action: 'debounced' };
+  lastTap.set(id, now);
+  const cur = (last.get(id) && last.get(id).payload.card) || (compose(id, now) || {}).card;
+  let action = 'next';
+  if (cur && cur.type === 'alert') {
+    const c = [...postedCards(now), ...[...store.values()].flatMap((e) => e.cards)].find((x) => x.key === cur.key);
+    run('INSERT INTO board_acks (screen_id, card_key, until_at, at) VALUES (?, ?, ?, ?) ON CONFLICT(screen_id, card_key) DO UPDATE SET until_at = excluded.until_at, at = excluded.at',
+      id, cur.key, (c && c.expires_at) || null, now);
+    action = 'ack';
+  }
+  const st = states.get(id) || (states.set(id, newState()), states.get(id));
+  st.skip = action === 'next';
+  if (composeAll(now).length) H.broadcast('board');
+  return { action, card: cur ? cur.key : null };
+}
+
 // Frame payload: the live one, else the cached last good grid (after a restart), else compose now.
 function payloadFor(id) {
   const sc = screenCfg(id);
@@ -184,7 +245,8 @@ function payloadFor(id) {
     if (c && c.card_json) { try { p = Object.assign(JSON.parse(c.card_json), { cells: JSON.parse(c.grid_json), cached: true }); } catch {} }
   }
   if (!p) p = compose(id);
-  const pals = { [p.palette]: CS.PALETTES[p.palette], night: CS.PALETTES.night, 'night-red': CS.PALETTES['night-red'] };
+  const sh = (n) => CS.shade(CS.PALETTES[n], p.shade || 0);
+  const pals = { [p.palette]: sh(p.palette), night: sh('night'), 'night-red': sh('night-red') };
   return Object.assign({ enabled: true }, p, { palettes: pals, accents: CS.ACCENTS });
 }
 export function screenInfo(id) { return { enabled: screenCfg(id).enabled }; }
@@ -253,6 +315,10 @@ function readScreen(id, b, cur) {
   if ('rows' in b) s.rows = num(b.rows, 2, 16, 'Rows');
   if ('flip' in b) s.flip = !!b.flip;
   if ('full' in b) s.full = !!b.full;
+  if ('gestures' in b) s.gestures = !!b.gestures;
+  if ('night_screen' in b) s.night_screen = !!b.night_screen;
+  if ('shade' in b) { const n = Number(b.shade); if (!CS.SHADES.includes(n)) bad('Flap shade must be a whole number from -2 (darker) to 2 (lighter)'); s.shade = n; }
+  if ('font' in b) { if (!FONT_NAMES.includes(b.font)) bad('Font must be one of: ' + FONT_NAMES.join(', ')); s.font = b.font; }
   if ('flip_cap' in b) s.flip_cap = num(b.flip_cap, 1, 64, 'Flips at once');
   if ('palette' in b) { if (!PALETTE_NAMES.includes(b.palette)) bad('Colours must be standard or bright'); s.palette = b.palette; }
   if (b.types) { s.types = Object.assign({}, cur.types); for (const t of TYPES) if (t in b.types) s.types[t] = !!b.types[t]; }
@@ -294,7 +360,7 @@ export function adminState(now = Date.now()) {
     kinds: Object.entries(KINDS).map(([k, K]) => ({ kind: k, label: K.label, type: K.type, notes: K.notes, needsKey: !!K.needsKey, every: K.every, fields: K.fields.map((f) => Object.assign({}, f, f.fmt ? { hint: LINE_FORMATS[f.fmt].hint } : {})),
       pool: Object.assign({}, poolCfg(k), { opts: Object.assign({}, K.defaultOpts, poolCfg(k).opts || {}) }), text: linesText(k, Object.assign({}, K.defaultOpts, poolCfg(k).opts || {})),
       key_set: !!getSetting('board_key_' + k), key: maskKey(getSetting('board_key_' + k)), status: status[k] || null })),
-    types: td, typeBase: TYPE_DEFAULTS, palettes: PALETTE_NAMES, accents: ACCENT_NAMES,
+    types: td, typeBase: TYPE_DEFAULTS, palettes: PALETTE_NAMES, fonts: CS.FONTS, accents: ACCENT_NAMES,
     token_set: !!getSetting('board_token'), token: maskKey(getSetting('board_token')),
     messages: all('SELECT * FROM board_messages ORDER BY id DESC').map((m) => Object.assign(m, { type: m.sticky || m.urgent ? 'alert' : 'personal', expired: !!(m.expires_at && m.expires_at <= now) })),
     screens: rows.map((r) => {
@@ -305,7 +371,7 @@ export function adminState(now = Date.now()) {
         cfg: sc, staticText: sc.sources.static && sc.sources.static.opts ? linesText('static', sc.sources.static.opts).items : null,
         inTabs: !tabs || tabs.indexOf('board') > -1, tabList: tabs || ALL_TABS,
         preview: sc.enabled ? CS.gridText(p ? p.payload.cells : cc ? JSON.parse(cc.grid_json) : compose(r.id, now).cells) : '',
-        card, flip3d: flip3d.has(r.id) ? flip3d.get(r.id) : cc ? cc.flip3d : null, polled: cc ? cc.polled_at : null
+        card, flip3d: flip3d.has(r.id) ? flip3d.get(r.id) : cc ? cc.flip3d : null, polled: cc ? cc.polled_at : null, ui: uiSeen.get(r.id) || null
       });
     })
   };
@@ -354,7 +420,15 @@ export async function api(req, res, url, parts, body) {
       if (flip3d.get(id) !== +f) run('INSERT INTO board_cache (screen_id, grid_json, rendered_at, flip3d, polled_at) VALUES (?, \'[]\', 0, ?, ?) ON CONFLICT(screen_id) DO UPDATE SET flip3d = excluded.flip3d, polled_at = excluded.polled_at', id, +f, Date.now());
       flip3d.set(id, +f);
     }
+    const ui = String(url.searchParams.get('ui') || '').replace(/[^\w.-]/g, '').slice(0, 40);
+    if (ui && uiSeen.get(id) !== ui) { uiSeen.set(id, ui); console.log('[board] ' + id + ' runs ' + ui); }
     return send(res, 200, payloadFor(id));
+  }
+  if (M === 'POST' && parts[1] === 'tap') { // the frame (LAN, no PIN, like GET)
+    const id = String((body && body.screen) || '').slice(0, 64);
+    if (!id) bad('screen is required');
+    const r = tap(id);
+    return send(res, 200, Object.assign({ ok: true }, r, { board: payloadFor(id) }));
   }
   if (parts[1] === 'message') {
     auth(req);
@@ -430,4 +504,4 @@ export function start(helpers, opts = {}) {
   setInterval(() => tick(Date.now()).catch((e) => console.error('[board]', e)), 2000);
 }
 // for test.js
-export const _t = { store, states, last, setHttp: (f) => { http = f; }, reset() { store.clear(); states.clear(); last.clear(); CFG = null; } };
+export const _t = { store, states, last, acks: (id) => all('SELECT * FROM board_acks WHERE screen_id = ?', id), setHttp: (f) => { http = f; }, reset() { store.clear(); states.clear(); last.clear(); lastTap.clear(); CFG = null; } };

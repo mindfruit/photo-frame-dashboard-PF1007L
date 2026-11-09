@@ -333,10 +333,11 @@
     idleSec++;
     var blocked = $('#takeover').classList.contains('is-open');
     if (App.mode === 'nightdash' && idleSec >= 20) { App.setMode('night'); return; }
+    var cur = App.views[App.current];
+    // The Flipboard stays up: no Today / slideshow, and in quiet hours it dims itself (unless its "night screen" is off)
+    if (App.mode === 'day' && !blocked && cur && cur.stay && cur.stay()) return;
     if (App.mode === 'day' && !blocked && idleSec >= 30 && App.isQuiet()) { App.closeSheet(); App.go(App.homeTab || 'home'); App.setMode('night'); App.nightBy = 'quiet'; return; }
     if (App.mode !== 'day' || blocked) return;
-    var cur = App.views[App.current];
-    if (cur && cur.stay && cur.stay()) return; // a full-screen Board stays up (quiet hours above still dim it)
     if (idleSec === App.idle.home && App.current !== (App.homeTab || 'home')) { App.closeSheet(); App.go(App.homeTab || 'home'); }
     if (idleSec >= App.idle.ambient) {
       App.closeSheet();

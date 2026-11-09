@@ -21,7 +21,7 @@ export const TYPE_DEFAULTS = {
   ambient: { dwell: 30, weight: 1, accent: '' }
 };
 
-export function newState() { return { cur: null, since: 0, last: {}, rr: {}, bag: [], lastAmbient: null }; }
+export function newState() { return { cur: null, since: 0, last: {}, rr: {}, bag: [], lastAmbient: null, skip: false }; }
 
 function active(c, now) {
   return (!c.starts_at || now >= c.starts_at) && (!c.expires_at || now < c.expires_at) && (!c.stale_after || now < c.stale_after);
@@ -49,7 +49,8 @@ export function select(cards, st, now, opts = {}) {
   const cur = pool.find((c) => c.key === st.cur);
   const alerts = pool.filter((c) => c.type === 'alert');
 
-  let go = !cur;
+  const skip = st.skip; st.skip = false; // a tap on the frame: move on now (the next card then gets its normal dwell)
+  let go = !cur || skip;
   if (cur && alerts.length && cur.type !== 'alert') go = true; // alert preempts
   else if (cur && pool.some((c) => LEVEL[c.type] > LEVEL[cur.type] && unseen(c))) go = true; // a new higher card doesn't wait
   else if (cur && now - st.since >= dwell(cur)) go = true;
