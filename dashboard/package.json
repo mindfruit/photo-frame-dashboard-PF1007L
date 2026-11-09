@@ -7,10 +7,20 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && wrangler deploy"
+    "deploy": "vite build && wrangler deploy",
+    "server": "node server/index.js",
+    "server:dev": "node --watch server/index.js",
+    "dev:all": "trap 'kill 0' EXIT; node --watch server/index.js & vite",
+    "start": "vite build && node server/index.js"
   },
   "devDependencies": {
     "vite": "^8.3.1",
     "wrangler": "^4.145.0"
+  },
+  "dependencies": {
+    "node-ical": "^0.26.1"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.10.0"
   }
 }

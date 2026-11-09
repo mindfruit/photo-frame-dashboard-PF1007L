@@ -9,5 +9,13 @@ export default defineConfig({
     target: 'chrome106',
     cssTarget: 'chrome61',
   },
-  server: { host: true },
+  server: {
+    host: true,
+    // The data server (server/index.js) runs on :3030; the dev server forwards API + admin to it.
+    proxy: {
+      '/api': { target: 'http://localhost:3030', changeOrigin: false, xfwd: true },
+      '/admin': { target: 'http://localhost:3030' },
+      '/photos': { target: 'http://localhost:3030' },
+    },
+  },
 });
