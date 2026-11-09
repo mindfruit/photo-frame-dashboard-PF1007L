@@ -1,0 +1,1572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Family dashboard · Parents</title>
+<style>
+  :root { --ink: #111; --mute: #666; --line: #e3e3e3; --bg: #f6f5f2; --accent: #2D5BFF; --bad: #c62828; --ok: #00875a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--bg); }
+  header { position: sticky; top: 0; z-index: 2; background: #fff; border-bottom: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; align-items: center; }
+  header { z-index: 4; padding-top: calc(10px + env(safe-area-inset-top)); }
+  header h1 { font-size: 20px; margin: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header h1 .brand { display: none; }
+  #lock { padding: 6px 10px; } #lock .lbl { display: none; }
+  .pagehead { display: none !important; }
+  /* Navigation: bottom tabs on phones, sidebar from 768px */
+  #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; background: #fff; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(7, 1fr); padding: 4px 2px calc(4px + env(safe-area-inset-bottom)); }
+  #nav a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; text-decoration: none; color: var(--mute); font-size: 10px; padding: 4px 0; border-radius: 10px; white-space: nowrap; overflow: hidden; }
+  #nav a .ic { font-size: 20px; line-height: 1.1; }
+  #nav a.on { color: var(--accent); background: #eef2ff; font-weight: 600; }
+  #nav .badge { position: absolute; top: 0; right: calc(50% - 22px); background: var(--bad); color: #fff; font-size: 10px; border-radius: 99px; padding: 0 5px; line-height: 16px; }
+  main { max-width: 760px; margin: 0 auto; padding: 14px 14px calc(84px + env(safe-area-inset-bottom)); }
+  #toast { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+  @media (min-width: 768px) {
+    main { margin-left: 210px; }
+    @media (min-width: 970px) { main { margin-left: max(210px, calc((100vw - 760px) / 2)); } }
+    header h1 { font-size: 18px; } header h1 .brand { display: inline; } header h1 .ptitle { display: none; }
+    #lock .lbl { display: inline; }
+    .pagehead { display: flex !important; }
+    #nav { top: 49px; right: auto; width: 210px; display: block; border-top: 0; border-right: 1px solid var(--line); padding: 12px 10px; }
+    #nav a { flex-direction: row; gap: 10px; font-size: 15px; padding: 10px 12px; margin-bottom: 2px; color: var(--ink); }
+    #nav a .ic { font-size: 18px; }
+    #nav .badge { position: static; margin-left: auto; font-size: 12px; line-height: 18px; padding: 0 7px; }
+    main { padding-bottom: 40px; }
+    #toast { bottom: 20px !important; }
+  }
+  .pagehead { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 12px; }
+  .pagehead h1 { font-size: 22px; margin: 0; }
+  a.back { display: inline-block; text-decoration: none; color: var(--accent); margin: 0 0 8px; font-size: 15px; }
+  .subnav { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 12px; padding-right: 32px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); scrollbar-width: none; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .subnav a { white-space: nowrap; text-decoration: none; color: var(--ink); padding: 6px 12px; border-radius: 99px; background: #fff; border: 1px solid var(--line); font-size: 14px; }
+  .subnav a.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  a.item { text-decoration: none; color: inherit; }
+  a.item .chev { color: var(--mute); font-size: 20px; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+  h3.sub { flex-basis: 100%; margin: 10px 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--mute); }
+  h3.sub:first-child { margin-top: 0; }
+  textarea { font: inherit; padding: 8px; border: 1px solid #ccc; border-radius: 8px; width: 100%; }
+  #stale { background: #fff8e1; border: 1px solid #f0d58a; border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; font-size: 14px; }
+  [hidden] { display: none !important; }
+  #stale[hidden] { display: none; }
+  .ha-card-h [data-ha-break-card] { font-size: 13px; padding: 4px 8px; white-space: nowrap; }
+  .ha-card-vals { margin-top: 6px; }
+  .ha-card-vals > summary { cursor: pointer; font-size: 13px; color: var(--mute); padding: 4px 0; list-style: none; }
+  .ha-card-vals > summary::-webkit-details-marker { display: none; }
+  .ha-card-vals > summary::before { content: '› '; }
+  .ha-card-vals[open] > summary::before { content: '⌄ '; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+  h2 { margin: 0 0 4px; font-size: 18px; }
+  .hint { color: var(--mute); font-size: 13px; margin: 0 0 10px; }
+  form.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding: 10px 0; border-top: 1px solid var(--line); }
+  form.row.new { background: #fafaf8; border-radius: 10px; padding: 10px; border: 1px dashed var(--line); }
+  label { display: flex; flex-direction: column; font-size: 12px; color: var(--mute); gap: 2px; flex: 1 1 120px; min-width: 0; }
+  label.narrow { flex: 0 1 80px; }
+  input, select { font: inherit; padding: 8px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: var(--ink); width: 100%; }
+  input[type=color] { padding: 2px; height: 40px; }
+  input[type=checkbox] { width: 22px; height: 22px; }
+  .days { display: flex; gap: 2px; }
+  .days label { flex: 0 0 auto; align-items: center; font-size: 11px; }
+  button { font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger { color: var(--bad); }
+  button.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .item { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .item .grow { flex: 1; min-width: 140px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 99px; background: var(--bg); font-size: 12px; }
+  .err { color: var(--bad); font-size: 13px; }
+  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; border-radius: 10px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  #toast.show { opacity: 1; }
+  #gate { max-width: 340px; margin: 18vh auto; text-align: center; }
+  #gate input { font-size: 28px; text-align: center; letter-spacing: 8px; margin: 12px 0; }
+  .wg { flex-basis: 100%; }
+  .wg > .lbl { font-size: 12px; color: var(--mute); margin: 0 0 8px; }
+  .wg-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .wg-grid { grid-template-columns: 1fr 1fr; } }
+  .wg-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fafaf8; }
+  .wg-card h4 { margin: 0 0 2px; font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--ink); }
+  .wg-card h4 button { margin-left: auto; font-size: 12px; padding: 4px 8px; }
+  .wg-item { padding: 8px 0 0; border-top: 1px solid var(--line); margin-top: 8px; }
+  .wg-item:first-of-type { border-top: 0; margin-top: 4px; padding-top: 4px; }
+  .wg-item label { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--ink); flex: 1 1 auto; }
+  .wg-item input[type=checkbox] { flex: 0 0 auto; margin-top: 1px; }
+  .wg-item .desc { display: block; font-size: 12px; color: var(--mute); font-weight: 400; margin-top: 1px; }
+  .wg > .lbl:empty { display: none; }
+  .card-desc { display: block; font-size: 12px; color: var(--mute); margin: 0 0 2px; }
+  .wg-fields { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-top: 8px; }
+  h4 .hsw { display: flex; margin-left: auto; flex: 0 0 auto; flex-direction: row; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; color: var(--mute); white-space: nowrap; }
+  h4 .hsw input[type=checkbox] { width: 18px; height: 18px; margin: 0; }
+  .wg-panel { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fff; }
+  .wg-panel > h4 { margin: 0 0 8px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  form.row > .wg-grid, form.row > .head-fields, form.row > .wg { flex-basis: 100%; width: 100%; }
+  .head-fields { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 4px; }
+  .head-fields button { flex: 0 0 auto; }
+  .wg-card form.row { border-top: 0; padding: 6px 0 0; }
+  .form-foot { display: flex; gap: 8px; align-items: center; flex-basis: 100%; width: 100%; margin-top: 8px; }
+  /* Google Photos section (phone: stacked text, action row underneath) */
+  #google .g-text { flex: 1 1 100%; min-width: 0; }
+  #google .g-act { display: flex; width: 100%; gap: 8px; }
+  #google .g-act .danger { margin-left: auto; border: 0; background: transparent; }
+  #google .g-act button, #google .g-act a.btn { white-space: nowrap; }
+  #google .g-uri { display: block; font: 13px/1.4 ui-monospace, Menlo, monospace; background: #f1f0ec; border-radius: 8px; padding: 6px 8px; user-select: all; -webkit-user-select: all; word-break: break-all; margin: 4px 0 2px; }
+  #google #gClient label { flex: 1 1 100%; }
+  @media (min-width: 640px) {
+    #google .g-text { flex: 1 1 auto; }
+    #google .g-act { width: auto; }
+    #google #gClient label { flex: 1 1 200px; }
+  }
+  .form-foot .danger { margin-left: auto; border: 0; background: transparent; }
+  @media (max-width: 639px) { .form-foot .primary { flex: 1; width: 100%; } }
+  .empty { background: #fff8e1; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+  .empty .hint { display: block; margin: 2px 0 0; }
+  .empty .act { margin-top: 8px; }
+  .full { flex-basis: 100% !important; }
+  .item .emo { font-size: 22px; width: 28px; text-align: center; }
+  details > summary { cursor: pointer; }
+  /* Look card (screens/profiles) + Frame styles card (Photos) */
+  .wg-item input[type=radio] { width: 20px; height: 20px; flex: 0 0 auto; margin: 1px 0 0; }
+  .fs-row { display: flex; align-items: center; gap: 10px; }
+  .fs-row .fs-name { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--ink); }
+  .fs-row select { width: auto; flex: 0 0 auto; font-size: 13px; padding: 5px 6px; }
+
+  /* Home (HA) area groups */
+  .ha-toolbar { margin: 8px 0 6px; }
+  .ha-toolbar #haFilter { width: 100%; box-sizing: border-box; }
+  .ha-tbrow { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .ha-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .ha-seg button { border: 0; border-radius: 0; padding: 5px 12px; background: #fff; }
+  .ha-seg button.on { background: var(--ink); color: #fff; }
+  .ha-tbrow [data-ha-new-group] { margin-left: auto; }
+  .ha-counts a { cursor: pointer; }
+  .ha-group { margin-bottom: 14px; }
+  .ha-gtools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+  .ha-gtools input { flex: 1; min-width: 120px; }
+  .ha-ent { border-top: 1px solid var(--line); }
+  .ha-line { display: flex; gap: 8px; align-items: center; padding: 8px 0; }
+  .ha-line .ha-pick { flex: 0 0 auto; margin: 0; }
+  .ha-line .ha-pick-sp { flex: 0 0 13px; }
+  .ha-line .grow { flex: 1; min-width: 0; }
+  .ha-line .grow b, .ha-line .grow small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ha-line select { flex: 0 0 auto; max-width: 110px; }
+  .ha-more { flex: 0 0 auto; padding: 4px 8px; font-size: 13px; }
+  .ha-edit { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 10px 21px; }
+  .ha-edit select, .ha-edit input { max-width: 180px; }
+  .ha-card-box { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+  .ha-card-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ha-card-big { font-size: 22px; font-weight: 700; }
+  .ha-card-big small { font-size: 13px; font-weight: 400; color: var(--mute); margin-left: 6px; }
+  .ha-card-sec { display: flex; gap: 8px; font-size: 13px; color: var(--mute); padding: 2px 0; }
+  .ha-card-sec span { flex: 1; } .ha-card-sec a { cursor: pointer; }
+  .ha-card-box .ha-ent { font-size: 13px; }
+  .ha-combine { position: sticky; bottom: 0; z-index: 3; background: #fff; border-top: 1px solid var(--line); padding: 10px 0; display: flex; gap: 8px; align-items: center; }
+  .ha-combine .hint { flex: 1; margin: 0; }
+  a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: inherit; border: 1px solid #ccc; border-radius: 8px; padding: 8px 12px; background: #fff; }
+  /* Photo views: per-source grids + storage */
+  /* source grid: one header per day, tiles are plain buttons (no delete on the tile: tap opens the photo view) */
+  .pday h3 { margin: 16px 0 6px; font-size: 14px; font-weight: 600; color: var(--mute); }
+  .pday:first-child h3 { margin-top: 6px; }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+  .ptile { position: relative; min-width: 0; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 8px; }
+  .ptile img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: #ecebe6; }
+  .ptile .pbadge { position: absolute; left: 4px; bottom: 4px; font-size: 11px; padding: 1px 6px; border-radius: 99px; background: rgba(0, 0, 0, .55); color: #fff; }
+  /* single-photo view (overlay; lives outside the patched sections) */
+  #pview { position: fixed; inset: 0; z-index: 20; background: rgba(10, 10, 10, .92); color: #fff; display: flex; flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)); }
+  #pview[hidden] { display: none; }
+  #pview .pv-bar { display: flex; align-items: center; gap: 8px; }
+  #pview .pv-bar b { flex: 1; font-size: 16px; }
+  #pview .pv-x { background: rgba(255, 255, 255, .14); color: #fff; border: 0; font-size: 22px; line-height: 1; padding: 8px 14px; border-radius: 10px; }
+  #pview .pv-img { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 10px 0; }
+  #pview .pv-img img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+  #pview .pv-meta { font-size: 14px; color: rgba(255, 255, 255, .8); margin-bottom: 12px; }
+  #pview .pv-acts { display: flex; gap: 8px; justify-content: flex-end; }
+  .pmore { margin: 12px 0 4px; text-align: center; }
+  .pmore button { min-width: 180px; }
+  #storeWarn { background: #fdecea; color: #8a1c12; border-radius: 10px; padding: 10px 12px; margin: 0 0 10px; font-size: 14px; }
+  #storeWarn.info { background: #eef4ff; color: #1d3f8a; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 6px 16px; flex-basis: 100%; font-size: 14px; }
+  .stat-row b { font-size: 16px; }
+  .meter { flex-basis: 100%; height: 8px; border-radius: 99px; background: #ecebe6; overflow: hidden; }
+  .meter i { display: block; height: 100%; background: var(--accent); }
+  .meter.full i { background: #E08A00; } /* 90% full and up */
+  .meter.low i { background: var(--bad); }
+  #pdirMsg { flex-basis: 100%; }
+  #storage input[name=photos_dir] { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="gate" hidden>
+  <h1 id="gateTitle">Parent PIN</h1>
+  <p class="hint" id="gateHint"></p>
+  <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8">
+  <button class="primary" id="pinGo" style="width:100%">Unlock</button>
+  <p class="err" id="gateErr"></p>
+</div>
+<div id="app" hidden>
+  <header><h1><span class="brand">Family dashboard</span><span class="ptitle" id="ptitle"></span></h1><button id="lock" aria-label="Lock" title="Lock">🔒<span class="lbl"> Lock</span></button></header>
+  <nav id="nav" aria-label="Sections"></nav>
+  <main><div id="storeWarn" hidden></div><div id="stale" hidden><span style="flex:1">What you’re editing was changed on another device. Your unsaved edits were kept.</span><button id="staleGo">Show latest</button></div><div id="main"></div></main>
+</div>
+<div id="toast"></div>
+<script>
+'use strict';
+var PIN = sessionStorage.getItem('pin') || '';
+var S = null; // admin state from /api/admin
+var $ = function (s, r) { return (r || document).querySelector(s); };
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 2500); }
+
+// Random id for this tab, sent on writes; the server echoes it on the live event so only our own writes skip the "changed elsewhere" banner.
+var CLIENT_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+function api(method, path, body) {
+  return fetch('/api/' + path, { method: method, headers: { 'Content-Type': 'application/json', 'X-PIN': PIN, 'X-Client-Id': CLIENT_ID }, body: body ? JSON.stringify(body) : undefined })
+    .then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (r.status === 401) { lock(); throw new Error(j.error || 'PIN required'); }
+        if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+        return j;
+      });
+    });
+}
+
+// ------------------------------------------------------------------ PIN gate
+var setupMode = false;
+function showGate() {
+  $('#app').hidden = true; $('#gate').hidden = false;
+  fetch('/api/auth').then(function (r) { return r.json(); }).then(function (a) {
+    setupMode = !a.pinSet;
+    $('#gateTitle').textContent = setupMode ? 'Create a parent PIN' : 'Parent PIN';
+    $('#gateHint').textContent = setupMode ? '4–8 digits. You will need it for this page and for approving chores.' : '';
+    $('#pinGo').textContent = setupMode ? 'Save PIN' : 'Unlock';
+    $('#pin').focus();
+  });
+}
+function lock() { PIN = ''; sessionStorage.removeItem('pin'); showGate(); }
+$('#pinGo').onclick = function () {
+  var pin = $('#pin').value.trim();
+  fetch('/api/auth' + (setupMode ? '/setup' : ''), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin }) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'Wrong PIN'); }); })
+    .then(function () { PIN = pin; sessionStorage.setItem('pin', pin); $('#pin').value = ''; $('#gateErr').textContent = ''; load(); })
+    .catch(function (e) { $('#gateErr').textContent = e.message; });
+};
+$('#pin').onkeydown = function (e) { if (e.key === 'Enter') $('#pinGo').click(); };
+$('#lock').onclick = lock;
+document.addEventListener('click', function (e) { if (e.target.id === 'refresh') refreshFeeds(); });
+function refreshFeeds() { api('POST', 'refresh').then(function (r) { toast(Object.keys(r.errors || {}).length ? 'Refreshed with errors' : 'Feeds refreshed'); load(); }).catch(function (e) { toast(e.message); }); }
+
+// ------------------------------------------------------------------ generic editors
+var DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+function peopleOpts(none) { return [['', none]].concat(S.people.map(function (p) { return [String(p.id), p.name]; })); }
+function field(f, v) {
+  var name = ' name="' + f.k + '"', val = v == null ? '' : v;
+  var input;
+  if (f.type === 'select') {
+    var opts = typeof f.opts === 'function' ? f.opts() : f.opts;
+    input = '<select' + name + '>' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(val) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
+  } else if (f.type === 'days') {
+    val = val || (v == null ? '0123456' : '');
+    return '<div><div style="font-size:12px;color:var(--mute)">' + f.label + '</div><div class="days">' + DAYS.map(function (d, i) {
+      return '<label><input type="checkbox" data-day="' + i + '"' + (String(val).indexOf(String(i)) > -1 ? ' checked' : '') + '>' + d + '</label>';
+    }).join('') + '</div></div>';
+  } else if (f.type === 'widgets') {
+    var cur = []; try { cur = typeof val === 'string' ? JSON.parse(val || '[]') : (val || []); } catch (e) {}
+    if (v == null && f.def) cur = f.def;
+    return '<div class="wg"><div class="lbl">' + f.label + '</div><div class="wg-grid">' + WIDGET_GROUPS.map(function (g) {
+      var allOn = g.items.every(function (o) { return cur.indexOf(o[0]) > -1; });
+      return '<div class="wg-card"><h4>' + esc(g.title) + '<button type="button" data-wg-all>' + (allOn ? 'Clear' : 'Select all') + '</button></h4>' +
+        g.items.map(function (o) {
+          return '<div class="wg-item"><label><input type="checkbox" data-multi="' + f.k + '" value="' + o[0] + '"' + (cur.indexOf(o[0]) > -1 ? ' checked' : '') + '><span><b>' + esc(o[1]) + '</b><span class="desc">' + esc(o[2]) + '</span></span></label></div>';
+        }).join('') + '</div>';
+    }).join('') + '</div></div>';
+  } else if (f.type === 'multi') {
+    var cur = []; try { cur = typeof val === 'string' ? JSON.parse(val || '[]') : (val || []); } catch (e) {}
+    if (v == null && f.def) cur = f.def;
+    return '<div style="flex-basis:100%"><div style="font-size:12px;color:var(--mute)">' + f.label + '</div><div class="days" style="flex-wrap:wrap">' + f.opts.map(function (o) {
+      return '<label><input type="checkbox" data-multi="' + f.k + '" value="' + o[0] + '"' + (cur.indexOf(o[0]) > -1 ? ' checked' : '') + '>' + o[1] + '</label>';
+    }).join('') + '</div></div>';
+  } else if (f.type === 'check') {
+    input = '<input type="checkbox"' + name + (val === '' || val ? ' checked' : '') + '>';
+  } else if (f.type === 'secret') {
+    input = '<input type="password" autocomplete="off"' + name + ' placeholder="' + esc(val ? 'Saved (' + val + ') — leave blank to keep' : f.ph || '') + '">';
+  } else {
+    input = '<input type="' + (f.type || 'text') + '"' + name + ' value="' + esc(val) + '"' + (f.ph ? ' placeholder="' + esc(f.ph) + '"' : '') + (f.type === 'number' ? ' inputmode="numeric"' : '') + '>';
+  }
+  return '<label class="' + (f.narrow ? 'narrow' : '') + '">' + f.label + input + '</label>';
+}
+function readForm(form, fields) {
+  var out = {};
+  fields.forEach(function (f) {
+    if (f.type === 'days') { out[f.k] = Array.prototype.map.call(form.querySelectorAll('[data-day]:checked'), function (c) { return c.dataset.day; }).join(''); return; }
+    if (f.type === 'multi' || f.type === 'widgets') { out[f.k] = Array.prototype.map.call(form.querySelectorAll('[data-multi="' + f.k + '"]:checked'), function (c) { return c.value; }); return; }
+    var el = form.elements[f.k];
+    if (!el) return;
+    if (f.type === 'check') out[f.k] = el.checked ? 1 : 0;
+    else if (f.type === 'number') out[f.k] = el.value === '' ? null : +el.value;
+    else if (f.type === 'secret') { if (el.value.trim()) out[f.k] = el.value.trim(); }
+    else out[f.k] = el.value.trim();
+  });
+  return out;
+}
+function rowForm(cfg, r) {
+  return '<form class="row" data-route="' + cfg.route + '" data-id="' + r.id + '">' + cfg.fields.map(function (f) { return field(f, r[f.k]); }).join('') +
+    (cfg.extra ? cfg.extra(r) : '') +
+    foot(!cfg.noAdd) + '</form>';
+}
+function newForm(cfg) {
+  if (cfg.noAdd) return '';
+  return '<form class="row new" data-route="' + cfg.route + '">' + cfg.fields.map(function (f) { return field(f, f.def); }).join('') + '<button class="primary">Add</button></form>';
+}
+function table(cfg, noTitle) {
+  var rows = S[cfg.key] || [];
+  return '<section id="' + cfg.route + '">' + (noTitle ? '' : '<h2>' + cfg.title + '</h2>') + (cfg.hint ? '<p class="hint">' + cfg.hint + '</p>' : '') +
+    rows.map(function (r) { return rowForm(cfg, r); }).join('') + newForm(cfg) + '</section>';
+}
+function foot(del, delAttr) { return '<div class="form-foot"><button class="primary">Save</button>' + (del ? '<button type="button" class="danger" ' + (delAttr || 'data-del') + '>Delete</button>' : '') + '</div>'; }
+function emptyBox(title, hint, btn) { return '<div class="empty"><b>' + title + '</b>' + (hint ? '<span class="hint">' + hint + '</span>' : '') + (btn ? '<div class="act">' + btn + '</div>' : '') + '</div>'; }
+function card(title, desc, inner, action) { return '<div class="wg-card"><h4>' + title + (action || '') + '</h4>' + (desc ? '<span class="card-desc">' + desc + '</span>' : '') + '<div class="wg-fields">' + inner + '</div></div>'; }
+function fieldsOf(cfg, keys, r) { return keys.map(function (k) { var f = cfg.fields.filter(function (x) { return x.k === k; })[0]; return field(f, r[k]); }).join(''); }
+function dayInitials(d) { if (d == null || d === '0123456') return 'Every day'; d = String(d); if (!d) return 'No days'; return DAYS.filter(function (x, i) { return d.indexOf(String(i)) > -1; }).join(' '); }
+function T(route) { return TABLES.filter(function (t) { return t.route === route; })[0]; }
+
+var TABLES = [];
+var WIDGET_GROUPS = [
+  { id: 'daily', title: 'Daily routine', items: [
+    ['chores', 'Chores', 'Morning and evening task list'],
+    ['pictures', 'Today in pictures', 'Picture words for today’s events'],
+    ['sleep', 'Bedtime / wake', 'Ok-to-wake and bedtime cues'],
+    ['weather', 'Weather / what to wear', 'Forecast on their tab'],
+    ['dress', 'Weather dress-up', 'Pick an outfit for the weather']
+  ]},
+  { id: 'rewards', title: 'Rewards & motivation', items: [
+    ['stars', 'Stars + week', 'Star count and weekly streak'],
+    ['jar', 'Star jar', 'Visual jar filling up'],
+    ['rewards', 'Rewards', 'Things stars can buy'],
+    ['family', 'Family scoreboard', 'Shared family goal progress']
+  ]},
+  { id: 'connection', title: 'Connection', items: [
+    ['feelings', 'Feelings check-in', 'How they’re feeling today'],
+    ['notes', 'Notes from parents', 'Messages you send them']
+  ]},
+  { id: 'learning', title: 'Learning & fun', items: [
+    ['learning', 'Learning corner', 'Letters, numbers, shapes'],
+    ['countdowns', 'Countdowns', 'Days until big events'],
+    ['today', 'Today’s calendar', 'Their schedule for the day']
+  ]}
+];
+var WIDGETS = WIDGET_GROUPS.reduce(function (a, g) { return a.concat(g.items.map(function (i) { return [i[0], i[1]]; })); }, []);
+function defineTables() {
+  var roleOpts = [['kid', 'Kid'], ['parent', 'Parent']];
+  var routineOpts = function () { return S.routines.map(function (r) { return [r.id, r.name]; }); };
+  TABLES = [
+    { route: 'people', key: 'people', title: 'People', hint: 'Kids earn stars. Home Assistant person entity (e.g. person.alex) shows who is home.', fields: [
+      { k: 'name', label: 'Name' }, { k: 'role', label: 'Role', type: 'select', opts: roleOpts, def: 'kid' },
+      { k: 'color', label: 'Color', type: 'color', def: '#2D5BFF', narrow: true }, { k: 'birthday', label: 'Birthday', type: 'date' },
+      { k: 'ha_entity', label: 'HA person entity', ph: 'person.name' },
+      { k: 'show_tab', label: 'Own tab', type: 'check', def: 1, narrow: true },
+      { k: 'approval', label: 'Chore approval', type: 'select', opts: [['', 'Use family setting'], ['on', 'Always ask me'], ['off', 'Never ask']] },
+      { k: 'bedtime', label: 'Bedtime', type: 'time', narrow: true }, { k: 'wake', label: 'Wake up', type: 'time', narrow: true },
+      { k: 'wake_light', label: 'Ok-to-wake HA light', ph: 'light.maya_lamp (optional)' },
+      { k: 'wake_color', label: 'Wake colour', type: 'color', def: '#FFC34D', narrow: true }, { k: 'bed_color', label: 'Bed colour', type: 'color', def: '#3B2A80', narrow: true },
+      { k: 'widgets', label: 'On their tab', type: 'widgets', def: WIDGETS.map(function (w) { return w[0]; }) }],
+      extra: function (p) { return p.role === 'kid' ? '<span class="pill">★ ' + p.stars + '</span>' : ''; } },
+    { route: 'chores', key: 'chores', title: 'Chores & routines', hint: 'Kids tap to finish; stars arrive after you approve. 0 stars = no approval needed.', fields: [
+      { k: 'emoji', label: 'Emoji', narrow: true, def: '⭐' }, { k: 'title', label: 'Chore' },
+      { k: 'person_id', label: 'Who', type: 'select', opts: function () { return peopleOpts('Anyone'); } },
+      { k: 'routine_id', label: 'When', type: 'select', opts: routineOpts, def: 'morning' },
+      { k: 'stars', label: 'Stars', type: 'number', def: 1, narrow: true }, { k: 'days', label: 'Days', type: 'days' },
+      { k: 'active', label: 'On', type: 'check', def: 1, narrow: true }] },
+    { route: 'rewards', key: 'rewards', title: 'Rewards', hint: 'Things stars can buy. Redeem them under Stars.', fields: [
+      { k: 'emoji', label: 'Emoji', narrow: true, def: '🎁' }, { k: 'title', label: 'Reward' },
+      { k: 'cost', label: 'Stars', type: 'number', def: 10, narrow: true }, { k: 'active', label: 'On', type: 'check', def: 1, narrow: true }] },
+    { route: 'calendars', key: 'calendars', title: 'Google calendars', hint: 'Google Calendar → Settings → pick a calendar → Integrate calendar → "Secret address in iCal format". Saved links are never shown again.', fields: [
+      { k: 'name', label: 'Name' }, { k: 'person_id', label: 'Whose', type: 'select', opts: function () { return peopleOpts('Whole family'); } },
+      { k: 'url', label: 'Secret iCal address', type: 'secret', ph: 'https://calendar.google.com/calendar/ical/…/basic.ics' }],
+      extra: function (c) { return '<span class="pill">' + (c.last_error ? '<span class="err">' + esc(c.last_error) + '</span>' : c.last_ok ? 'OK ' + new Date(c.last_ok).toLocaleTimeString() : 'not fetched yet') + '</span>'; } },
+    { route: 'countdowns', key: 'countdowns', title: 'Countdowns', fields: [
+      { k: 'emoji', label: 'Emoji', narrow: true, def: '🎉' }, { k: 'title', label: 'What' }, { k: 'date', label: 'Date', type: 'date' },
+      { k: 'person_id', label: 'For', type: 'select', opts: function () { return peopleOpts('Everyone'); } }] },
+    { route: 'routines', key: 'routines', title: 'Routine times', hint: 'Hours 0–24. Edit only; the dashboard has three routines.', noAdd: true, fields: [
+      { k: 'name', label: 'Name' }, { k: 'from_h', label: 'From hour', type: 'number', narrow: true }, { k: 'to_h', label: 'To hour', type: 'number', narrow: true }] },
+    { route: 'icons', key: 'icons', title: 'Picture words', hint: '“Today in pictures” shows this emoji when an event or chore title contains the word.', fields: [
+      { k: 'keyword', label: 'Word' }, { k: 'emoji', label: 'Emoji', narrow: true }] },
+    { route: 'stores', key: 'stores', title: 'Stores', fields: [{ k: 'name', label: 'Store' }] },
+    { route: 'usuals', key: 'usuals', title: 'Usual groceries', hint: 'One-tap items on the shopping screen.', fields: [{ k: 'name', label: 'Item' }] }
+  ];
+}
+
+// ------------------------------------------------------------------ special sections
+function nameOf(id) { var p = S.people.filter(function (x) { return x.id === id; })[0]; return p ? p.name : 'Anyone'; }
+function approvals() {
+  var rr = S.rewardRequests || [];
+  return '<section id="approvals"><h2>Waiting for approval' + (S.pending.length + rr.length ? ' (' + (S.pending.length + rr.length) + ')' : '') + '</h2>' +
+    (S.pending.length + rr.length ? '' : '<p class="hint">Chore approval is <b>' + (S.settings.approval_required ? 'on' : 'off') + '</b> for the family (change it in Settings; override per person under People). When off, stars are added right away.</p>') +
+    rr.map(function (x) {
+      return '<div class="item"><span class="grow">🎁 <b>' + esc(x.title) + '</b> · ' + esc(nameOf(x.person_id)) + (x.cost != null ? ' · ★' + x.cost : '') + '</span>' +
+        '<button class="ok" data-rr-approve="' + x.id + '">Give it</button><button class="danger" data-rr-deny="' + x.id + '">Not now</button></div>';
+    }).join('') +
+    (S.pending.length ? '<p><button class="ok" data-approve-all>Approve all</button></p>' : '<p class="hint">Nothing to approve.</p>') +
+    S.pending.map(function (k) {
+      return '<div class="item"><span class="grow">' + esc(k.emoji) + ' <b>' + esc(k.title) + '</b> · ' + esc(nameOf(k.person_id)) + (k.stars != null ? ' · ★' + k.stars : '') + (k.day ? ' <span class="pill">' + esc(k.day) + '</span>' : '') + '</span>' +
+        '<button class="ok" data-approve="' + k.id + '">Approve</button><button class="danger" data-reject="' + k.id + '">Not yet</button></div>';
+    }).join('') + '</section>';
+}
+function starsSection() {
+  var kids = S.people.filter(function (p) { return p.role === 'kid'; });
+  if (!kids.length) return '<section id="stars"><h2>Stars</h2><p class="hint">Add a kid under People first.</p></section>';
+  var rewards = S.rewards.filter(function (r) { return r.active; });
+  return '<section id="stars"><h2>Stars</h2>' + kids.map(function (k) {
+    return '<div class="item"><span class="g-text"><b>' + esc(k.name) + '</b> · ★ ' + k.stars + '</span>' +
+      '<button data-adj="' + k.id + '" data-d="1">+1</button><button data-adj="' + k.id + '" data-d="-1">−1</button>' +
+      (rewards.length ? '<select data-reward-for="' + k.id + '">' + rewards.map(function (r) { return '<option value="' + r.id + '">' + esc(r.emoji + ' ' + r.title) + ' (★' + r.cost + ')</option>'; }).join('') + '</select><button data-redeem="' + k.id + '">Redeem</button>' : '') +
+      '</div>';
+  }).join('') +
+  (S.ledger.length ? '<details><summary class="hint">Recent star history</summary>' + S.ledger.map(function (l) {
+    return '<div class="item"><span class="grow">' + esc(nameOf(l.person_id)) + ' · ' + esc(l.reason || '') + '</span><b>' + (l.delta > 0 ? '+' : '') + l.delta + '</b><span class="pill">' + esc(l.created_at) + ' UTC</span></div>';
+  }).join('') + '</details>' : '') + '</section>';
+}
+// ------------------------------------------------------------------ storage (photo folder size, free space, location)
+function gb(b) { if (b == null) return '–'; var g = b / 1073741824; return g >= 10 ? Math.round(g) + ' GB' : g >= 1 ? g.toFixed(1) + ' GB' : Math.round(b / 1048576) + ' MB'; }
+function moveStatus(m) {
+  if (!m) return '';
+  var counts = m.copied + ' copied, ' + m.skipped + ' already there' + (m.missing ? ', ' + m.missing + ' missing in the old folder' : '') + (m.failed ? ', <b>' + m.failed + ' failed</b>' : '');
+  var body = m.state === 'copying' ? 'Moving to <code>' + esc(m.to) + '</code>: ' + m.done + ' of ' + m.total + ' (' + counts + ')…'
+    : m.state === 'deleting' ? 'All copies checked, now using <code>' + esc(m.to) + '</code>. Removing the old copies… ' + m.deleted + ' removed'
+    : m.state === 'done' ? '✓ Moved ' + m.total + ' photos to <code>' + esc(m.to) + '</code> (' + counts + '). ' + m.deleted + ' old copies removed' + (m.same ? ', ' + m.same + ' already there as the same file' : '') + (m.kept ? ', ' + m.kept + ' kept because their new copy didn’t match' : '') + '.'
+    : '<span class="err">' + esc(m.error || 'Move stopped') + '</span> (' + counts + ')' + (m.failures && m.failures.length ? '<br><small class="hint">' + m.failures.map(esc).join('<br>') + '</small>' : '');
+  return '<div class="full"><span class="card-desc" style="color:var(--ink)">' + body + '</span>' + (m.state === 'done' || m.state === 'error' ? '<button type="button" data-store-dismiss>Dismiss</button>' : '') + '</div>';
+}
+function storageSection() {
+  var t = S.storage || {}, used = t.total ? Math.min(100, Math.round((t.total - t.free) / t.total * 100)) : 0, env = t.from === 'env', busy = t.move && (t.move.state === 'copying' || t.move.state === 'deleting');
+  return '<section id="storage"><div class="wg-grid">' +
+    card('Storage', 'Photo files on this server and the space left on that disk. Folder size is recounted every few minutes.',
+      (!t.ok ? '<p class="err full" style="margin:0">⚠ ' + esc(t.reason) + '. Downloads, removal sync and deletes are paused.</p>' :
+      '<div class="stat-row"><span><b>' + gb(t.bytes) + '</b> photo folder</span><span><b>' + (t.photos || 0) + '</b> photos</span><span><b>' + gb(t.free) + '</b> free of ' + gb(t.total) + '</span></div>' +
+      '<div class="meter' + (t.low ? ' low' : used >= 90 ? ' full' : '') + '"><i style="width:' + used + '%"></i></div>' +
+      (t.low ? '<p class="err full" style="margin:0">Less than ' + gb(t.low_limit) + ' free. Large albums can fill the disk: remove albums you don’t need, or move the photos to a bigger drive below.</p>' : '<span class="hint full" style="margin:0">' + used + '% of the disk used.</span>')),
+      '<button type="button" data-store-refresh>Refresh</button>') +
+    card('Photo folder', 'Where photo files are kept. Moving copies every photo, checks each copy, switches over, then removes the old copies. If the folder goes missing (drive unplugged), nothing is deleted and syncing pauses until it’s back.',
+      '<label class="full">Folder<input name="photos_dir" value="' + esc(t.dir || '') + '" placeholder="' + esc(t.default_dir || '') + '" autocomplete="off" spellcheck="false"' + (env || busy ? ' disabled' : '') + '></label>' +
+      (env ? '<p class="hint full" style="margin:0">Set by PHOTOS_DIR in the server’s environment, so it can only be changed there.</p>' +
+          '<div class="full"><button type="button" data-store-check' + (busy ? ' disabled' : '') + '>Check folder</button> <button type="button" data-store-use' + (busy ? ' disabled' : '') + '>Use without moving</button></div>' +
+          '<small class="hint" id="pdirMsg">Use without moving confirms this folder once every photo is in it (or it’s a new, empty one on a fresh install).</small>'
+        : '<div class="full"><button type="button" data-store-check' + (busy ? ' disabled' : '') + '>Check folder</button><span data-store-new hidden> <button type="button" class="primary" data-store-move' + (busy ? ' disabled' : '') + '>Move photos here</button> <button type="button" data-store-use' + (busy ? ' disabled' : '') + '>Use without moving</button></span></div>' +
+          '<small class="hint" id="pdirMsg">' + (t.from === 'default' ? 'Default folder (server/photos).' : 'Leave empty and Move to go back to server/photos.') + '</small>') +
+      moveStatus(t.move)) +
+    '</div></section>';
+}
+// Folder card: Move / Use appear only once the path differs from the current folder (blank = the default folder).
+// The text compare is a first guess; Check asks the server, which resolves symlinks / trailing slashes / "..": when it
+// says same:true for the typed path, Move / Use stay hidden for that path.
+var STORE_CHECKED = null; // { dir, same } from the last Check
+function storeNewToggle(inp) {
+  var sec = inp.closest('#storage'), box = sec && sec.querySelector('[data-store-new]'), t = S.storage || {};
+  if (!box) return;
+  var v = inp.value.trim(), cur = t.dir || t.default_dir || '';
+  box.hidden = STORE_CHECKED && STORE_CHECKED.dir === v ? STORE_CHECKED.same : (v || t.default_dir || '') === cur;
+}
+// A live redraw (SSE: storage stats, move progress) keeps a typed folder path, its caret and the Move / Use state;
+// the rest of the card (meter, numbers, progress) stays live, so the path field doesn't mark the section dirty.
+function keepStoreDir(cur, fresh) {
+  var o = cur.querySelector('[name=photos_dir]'), n = fresh.querySelector('[name=photos_dir]');
+  if (!o || !n || n.disabled) return;
+  if (o.value !== o.defaultValue) { n.value = o.value; storeNewToggle(n); }
+  if (document.activeElement === o) { var a = o.selectionStart, b = o.selectionEnd, d = o.selectionDirection; return function () { n.focus(); try { n.setSelectionRange(a, b, d); } catch (e) {} }; }
+}
+document.addEventListener('input', function (e) { if (e.target.name === 'photos_dir' && e.target.closest('#storage')) storeNewToggle(e.target); });
+document.addEventListener('click', function (e) {
+  var t = e.target, sec = t.closest && t.closest('#storage'); if (!sec || t.tagName !== 'BUTTON') return;
+  var inp = sec.querySelector('[name=photos_dir]'), msg = $('#pdirMsg'), dir = inp ? inp.value.trim() : '';
+  var say = function (html, bad) { if (msg) { msg.innerHTML = html; msg.className = bad ? 'err' : 'hint'; } };
+  var fail = function (err) { say(esc(err.message), true); };
+  if (t.hasAttribute('data-store-refresh')) return api('GET', 'storage').then(function () { load(); }).catch(function (err) { toast(err.message); });
+  if (t.hasAttribute('data-store-dismiss')) { settle(t); return api('POST', 'storage/clear-move').then(function () { load(); }).catch(function (err) { toast(err.message); }); }
+  if (t.hasAttribute('data-store-check')) {
+    say('Checking…');
+    return api('POST', 'storage/check', { dir: dir }).then(function (v) {
+      STORE_CHECKED = { dir: dir, same: !!v.same }; if (inp) storeNewToggle(inp);
+      var warn = v.same ? '' : v.links ? ' ⚠ ' + v.links + ' photo files there are symlinks, so Move will refuse this folder.'
+        : v.short ? ' ⚠ Not enough room: moving needs ' + gb(v.need) + ' and ' + gb(v.reserve) + ' must stay free, but only ' + gb(v.free) + ' is free.' : '';
+      say('✓ Writable. ' + gb(v.free) + ' free of ' + gb(v.total) + (v.low ? ' (under 10 GB)' : '') + '. ' + (v.same ? 'This is the current folder.' : v.there + ' of ' + v.photos + ' photos already there' + (v.need ? ', moving needs ' + gb(v.need) + ' (+ ' + gb(v.reserve) + ' kept free)' : '') + '.') + warn, v.low || !!warn);
+    }).catch(fail);
+  }
+  if (t.hasAttribute('data-store-move')) {
+    if (!confirm('Move all photos to ' + (dir || 'the default folder') + '? Each copy is checked before the old one is removed. The frame keeps working.')) return;
+    settle(t); say('Starting…');
+    return api('POST', 'storage/move', { dir: dir }).then(function () { say('Moving… progress shows below.'); load(); }).catch(fail);
+  }
+  if (t.hasAttribute('data-store-use')) {
+    if (!confirm('Switch to ' + (dir || 'the default folder') + ' without copying? Only works if every photo is already there.')) return;
+    settle(t);
+    return api('POST', 'storage/use', { dir: dir }).then(function () { say('✓ Now using that folder.'); load(); }).catch(fail);
+  }
+});
+function settings() {
+  var s = S.settings, errs = Object.keys(S.errors || {});
+  var chk = function (n, on) { return '<input type="checkbox" name="' + n + '"' + (on ? ' checked' : '') + '>'; };
+  return '<section id="settings"><form class="row" id="settingsForm" novalidate style="border-top:0;padding-top:0"><div class="wg-grid">' +
+    card('Feeds', 'Calendars, weather and Home Assistant refresh on their own. Use this only if something looks stale.',
+      (errs.length ? '<p class="err full" style="margin:0">' + errs.map(function (k) { return esc(k + ': ' + S.errors[k]); }).join('<br>') + '</p>' : '<span class="hint full" style="margin:0">' + (S.calendarEvents != null ? S.calendarEvents : 0) + ' calendar events loaded</span>'),
+      '<button type="button" id="refresh">Refresh feeds</button>') +
+    card('Weather', 'Shown on the frame and kid tabs.',
+      '<label>Weather location<input name="location" value="' + esc(s.location) + '" placeholder="Frisco, TX or lat,lon"></label>' +
+      '<label class="narrow">Units<select name="units"><option value="fahrenheit"' + (s.units === 'fahrenheit' ? ' selected' : '') + '>°F</option><option value="celsius"' + (s.units === 'celsius' ? ' selected' : '') + '>°C</option></select></label>') +
+    card('Chores & family goal', 'Approval holds stars until you OK them. The goal is shared by the whole family each week.',
+      '<label class="narrow">Chore approval' + chk('approval_required', s.approval_required) + '</label>' +
+      '<label class="narrow">Goal emoji<input name="family_goal_emoji" value="' + esc(s.family_goal_emoji) + '" placeholder="🏆"></label>' +
+      '<label>Family goal (weekly)<input name="family_goal_title" value="' + esc(s.family_goal_title) + '" placeholder="Pizza & movie night"></label>' +
+      '<label class="narrow">Stars needed<input type="number" name="family_goal_stars" value="' + esc(s.family_goal_stars) + '"></label>') +
+    card('Quiet hours & sound', 'Default quiet hours for screens; each screen can override.',
+      '<label class="narrow">Quiet from<input type="time" step="60" name="quiet_start" value="' + esc(s.quiet_start || '') + '"></label>' +
+      '<label class="narrow">Quiet until<input type="time" step="60" name="quiet_end" value="' + esc(s.quiet_end || '') + '"></label>' + '<small class="err full" data-qerr hidden>Set both times, or clear both.</small>' +
+      '<label class="narrow">Mute sounds' + chk('sounds_muted', s.sounds_muted) + '</label>') +
+    card('Learning corner', 'One per line: the big letter/number/shape first, then words.',
+      '<label class="full"><textarea name="learning_items" rows="5">' + esc(s.learning_items) + '</textarea></label>') +
+    '<div class="wg-card"><h4 id="ha-settings">Home Assistant</h4><span class="card-desc">Powers the Home tab, bedtime lights and who’s home.</span><div class="wg-fields">' +
+      '<label class="full">Home Assistant URL<input name="ha_url" value="' + esc(s.ha_url) + '" placeholder="http://homeassistant.local:8123"></label>' +
+      '<label class="full">HA long-lived token<input type="password" autocomplete="off" name="ha_token" placeholder="' + esc(s.ha_token_set ? 'Saved (' + s.ha_token + ') — leave blank to keep' : 'Profile → Security → Long-lived access tokens') + '"></label>' +
+      (s.ha_token_set ? '<label class="narrow">Forget token' + chk('clear_ha_token', false) + '</label>' : '') + '</div></div>' +
+    card('Parent PIN', 'Needed for this page and for approving chores on the frame.',
+      '<label>New parent PIN<input type="password" inputmode="numeric" name="new_pin" placeholder="leave blank to keep"></label>') +
+    card('Kiosk exit PIN', 'Asked before the frame app’s two-finger hold menu (launcher, Android settings, reload) opens. Not the parent PIN. Each screen can override it under Screens. No PIN = the menu opens straight away.',
+      '<label>' + (s.kiosk_pin_set ? 'New kiosk PIN' : 'Kiosk PIN') + '<input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="kiosk_pin" placeholder="' + (s.kiosk_pin_set ? 'Set — leave blank to keep' : 'Not set — 4–8 digits') + '"></label>' +
+      (s.kiosk_pin_set ? '<div class="full"><button type="button" data-kiosk-clear>Remove PIN</button> ' : '<div class="full">') + '<button type="button" data-kiosk-unlock>Clear lockout (all screens)</button> <small class="hint">Ends a 30 s wrong-PIN cooldown on the next check (within 5 min, or after Reload).</small></div>') +
+    '</div><div class="form-foot"><button class="primary">Save settings</button></div></form>' +
+    (s.lat != null && s.lon != null ? '<p class="hint" style="margin:8px 0 0">' + esc(s.lat) + ', ' + esc(s.lon) + '</p>' : '') + '</section>';
+}
+
+// ------------------------------------------------------------------ Home Assistant entity picker (areas + cards)
+var HA = null, haFilter = '', haShow = 'on'; // on | all
+function haGroupOptions(selected, haArea) {
+  var gs = (HA && HA.groups) || [];
+  return gs.map(function (g) {
+    var label = g.name + (g.id === (haArea || '') ? ' (HA)' : '') + (g.custom ? ' · custom' : '');
+    return '<option value="' + esc(g.id) + '"' + (g.id === selected ? ' selected' : '') + '>' + esc(label) + '</option>';
+  }).join('');
+}
+var haOpen = {};
+function haVal(e) { return esc(e.state) + (e.unit ? ' ' + esc(e.unit) : ''); }
+function haEntityRow(e) {
+  var modeSel = [['off', 'Hidden'], ['control', 'Control'], ['sensor', 'Sensor']].map(function (o) {
+    return '<option value="' + o[0] + '"' + (e.mode === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+  }).join('');
+  var pin = /^(lock|alarm_control_panel)\./.test(e.id) || /^cover\..*garage/.test(e.id);
+  var open = haOpen[e.id];
+  return '<div class="ha-ent" data-ha="' + esc(e.id) + '"><div class="ha-line">' +
+    (e.mode === 'sensor' && !e.cardId ? '<label class="ha-pick" title="Select to combine into one card"><input type="checkbox" data-ha-pick></label>' : '<span class="ha-pick-sp"></span>') +
+    '<span class="grow"><b>' + esc(e.label || e.name) + (e.cardPrimary ? ' <span class="pill">primary</span>' : '') + '</b>' +
+      '<small class="hint" style="margin:0">' + esc(e.id) + ' · ' + haVal(e) + (pin ? ' · asks for PIN on the frame' : '') + (e.groupOverride ? ' · moved' : '') + '</small></span>' +
+    '<select data-ha-mode>' + modeSel + '</select>' +
+    '<button type="button" class="ha-more" data-ha-more title="Edit">' + (open ? '⌄' : '›') + '</button></div>' +
+    '<div class="ha-edit"' + (open ? '' : ' hidden') + '>' +
+    '<select data-ha-group title="Group">' + haGroupOptions(e.groupId, e.haArea) + '</select>' +
+    '<input data-ha-label placeholder="Label (' + esc(e.name) + ')" value="' + esc(e.label) + '">' +
+    (e.cardId ? '<button type="button" data-ha-uncard>Remove from card</button>' : '') +
+    '</div></div>';
+}
+function haSection() {
+  var body;
+  var setupLink = '<a href="#/settings/ha"><button type="button" class="primary">Open Home Assistant settings</button></a>';
+  if (HA === 'loading') body = '<p class="hint">Asking Home Assistant for its devices…</p>';
+  else if (!HA) body = '<p><button data-ha-load>Load devices from Home Assistant</button></p>';
+  else if (HA.failed) body = '<div id="haState" style="background:#fdecea;border-radius:10px;padding:10px 12px;margin:8px 0"><b>Couldn’t load devices.</b><br><span class="err">' + esc(HA.failed) + '</span></div><p><button data-ha-load>Try again</button></p>';
+  else if (!HA.configured) body = '<div id="haState" style="background:#fff8e1;border-radius:10px;padding:10px 12px;margin:8px 0"><b>Home Assistant isn’t set up yet.</b><br><span class="hint" style="margin:0">Add the Home Assistant URL (e.g. http://homeassistant.local:8123) and a long-lived access token (Home Assistant → Profile → Security) in Settings, then come back here.</span></div><p>' + setupLink + '</p>';
+  else if (HA.error) body = '<div id="haState" style="background:#fdecea;border-radius:10px;padding:10px 12px;margin:8px 0"><b>Home Assistant didn’t answer.</b><br><span class="err">' + esc(HA.error) + '</span><br><span class="hint" style="margin:0">' + (/401|unauthor/i.test(HA.error) ? 'The token was rejected — paste a fresh long-lived token in Settings.' : 'Check the URL is reachable from the dashboard server and the token is valid.') + '</span></div><p><button data-ha-load>Try again</button> ' + setupLink + '</p>';
+  else {
+    var q = haFilter.toLowerCase();
+    var enabledN = HA.entities.filter(function (e) { return e.mode !== 'off'; }).length;
+    var list = HA.entities.filter(function (e) {
+      if (haShow === 'on' && e.mode === 'off' && !q) return false;
+      if (!q) return haShow === 'all' ? true : e.mode !== 'off';
+      return (e.id + ' ' + e.name + ' ' + (e.groupId || '')).toLowerCase().indexOf(q) > -1 || (q === 'on' && e.mode !== 'off');
+    });
+    // Group filtered entities by groupId
+    var byG = {};
+    list.forEach(function (e) { (byG[e.groupId] = byG[e.groupId] || []).push(e); });
+    var groupOrder = (HA.groups || []).slice().sort(function (a, b) { return a.sort - b.sort || a.name.localeCompare(b.name); });
+    // Include any groupId present in list but missing from groups
+    Object.keys(byG).forEach(function (id) {
+      if (!groupOrder.some(function (g) { return g.id === id; })) groupOrder.push({ id: id, name: id, sort: 8000 });
+    });
+    var groupsHtml = groupOrder.map(function (g) {
+      var ents = byG[g.id];
+      if (!ents || !ents.length) return '';
+      // Cluster multi-sensor cards within the group
+      var cards = {}, solo = [];
+      ents.forEach(function (e) {
+        if (e.cardId && e.mode === 'sensor') { (cards[e.cardId] = cards[e.cardId] || []).push(e); }
+        else solo.push(e);
+      });
+      var inner = '';
+      Object.keys(cards).forEach(function (cid) {
+        var members = cards[cid];
+        var pr = members.filter(function (m) { return m.cardPrimary; })[0] || members[0];
+        var nm = function (m) { return esc(m.label || m.name); };
+        inner += '<div class="ha-card-box" data-ha-card="' + esc(cid) + '"><div class="ha-card-h">' +
+          '<div class="ha-card-big">' + haVal(pr) + '<small>' + nm(pr) + '</small></div>' +
+          '<button type="button" data-ha-break-card="' + esc(cid) + '">Break apart</button></div>' +
+          members.filter(function (m) { return m !== pr; }).map(function (m) {
+            return '<div class="ha-card-sec" data-ha-sec="' + esc(m.id) + '"><span>' + nm(m) + '</span><b>' + haVal(m) + '</b> <a data-ha-primary>Make primary</a></div>';
+          }).join('') +
+          '<details class="ha-card-vals"><summary>Edit values</summary>' + members.map(haEntityRow).join('') + '</details></div>';
+      });
+      inner += solo.map(haEntityRow).join('');
+      return '<div class="wg-card ha-group" data-ha-gid="' + esc(g.id) + '">' +
+        '<h4>' + esc(g.name) + '<button type="button" data-ha-gedit>' + (haOpen['g:' + g.id] ? 'Done' : 'Edit') + '</button></h4>' +
+        '<span class="card-desc">' + ents.length + ' device' + (ents.length === 1 ? '' : 's') +
+          (g.fromHa ? ' · Home Assistant area' : g.custom ? ' · custom group' : '') + '</span>' +
+        '<div class="ha-gtools"' + (haOpen['g:' + g.id] ? '' : ' hidden') + '>' +
+        '<input data-ha-gname placeholder="Rename ' + esc(g.name) + '" value="' + esc(g.renamed ? g.name : '') + '">' +
+        '<button type="button" data-ha-gup title="Move group up">↑</button>' +
+        '<button type="button" data-ha-gdown title="Move group down">↓</button>' +
+        (g.custom ? '<button type="button" class="danger" data-ha-gdel>Delete</button>' : '') +
+        '</div>' +
+        inner + '</div>';
+    }).join('');
+    body = '<div class="ha-toolbar">' +
+      '<input id="haFilter" type="search" placeholder="Search devices" value="' + esc(haFilter) + '">' +
+      '<div class="ha-tbrow"><span class="ha-seg">' +
+      '<button type="button" data-ha-show="on"' + (haShow === 'on' ? ' class="on"' : '') + '>Enabled</button>' +
+      '<button type="button" data-ha-show="all"' + (haShow === 'all' ? ' class="on"' : '') + '>All</button></span>' +
+      '<button type="button" class="primary" data-ha-new-group>New group</button></div></div>' +
+      '<p class="hint ha-counts">' + enabledN + ' shown on the frame · ' + HA.entities.length + ' in Home Assistant · <a data-ha-load>Refresh</a></p>' +
+      (groupsHtml || '<p class="hint">No devices match.</p>') +
+      '<div class="ha-combine" hidden><span class="hint">The first checked becomes the big value.</span><button type="button" class="primary" data-ha-make-card>Combine</button></div>';
+  }
+  var intro = '<p class="hint">Pick what the frame’s Home tab shows: Control = tappable, Sensor = shows its value. Grouped by Home Assistant area.</p>';
+  return '<section id="ha">' + intro + body + '</section>';
+}
+function loadHA() { HA = 'loading'; paintHA(); return api('GET', 'ha/entities').then(function (r) { HA = r; paintHA(); }).catch(function (e) { HA = { failed: e.message }; paintHA(); }); }
+function paintHA() { var el = $('#ha'); if (el) { haPickOrder = []; el.outerHTML = haSection(); var f = $('#haFilter'); if (f && haFilter) { f.focus(); f.setSelectionRange(haFilter.length, haFilter.length); } } }
+var haPickOrder = [];
+// Quiet refresh after a local save: no "Asking Home Assistant…" blank; keeps focus, caret and any half-typed inputs.
+function haKey(el) {
+  var row = el.closest('[data-ha]'), grp = el.closest('[data-ha-gid]');
+  var attr = ['data-ha-label', 'data-ha-gname', 'data-ha-mode', 'data-ha-group'].filter(function (a) { return el.hasAttribute(a); })[0];
+  if (el.id === 'haFilter') return '#haFilter';
+  if (!attr) return null;
+  if (row) return '[data-ha="' + row.dataset.ha.replace(/"/g, '\\"') + '"] [' + attr + ']';
+  if (grp) return '[data-ha-gid="' + grp.getAttribute('data-ha-gid').replace(/"/g, '\\"') + '"] [' + attr + ']';
+  return null;
+}
+function refreshHA() {
+  return api('GET', 'ha/entities').then(function (r) {
+    var sec = $('#ha'), dirty = [], act = document.activeElement, actKey = null, sel = null;
+    if (sec) {
+      Array.prototype.forEach.call(sec.querySelectorAll('input[data-ha-label], input[data-ha-gname]'), function (i) {
+        if (i.value !== i.defaultValue) { var k = haKey(i); if (k) dirty.push([k, i.value]); }
+      });
+      if (act && sec.contains(act)) { actKey = haKey(act); try { sel = [act.selectionStart, act.selectionEnd]; } catch (x) {} }
+    }
+    HA = r;
+    var el = $('#ha'); if (!el) return;
+    haPickOrder = []; el.outerHTML = haSection();
+    var ns = $('#ha');
+    dirty.forEach(function (d) { var i = ns.querySelector(d[0]); if (i) i.value = d[1]; });
+    if (actKey) { var a = actKey === '#haFilter' ? $('#haFilter') : ns.querySelector(actKey); if (a) { a.focus(); if (sel && sel[0] != null) try { a.setSelectionRange(sel[0], sel[1]); } catch (x) {} } }
+  }).catch(function (e) { toast(e.message); });
+}
+function saveHA(row) {
+  if (!HA || typeof HA !== 'object' || !HA.entities) { setTimeout(function () { if (document.body.contains(row)) saveHA(row); }, 400); return; }
+  var id = row.dataset.ha, mode = row.querySelector('[data-ha-mode]').value, label = row.querySelector('[data-ha-label]').value.trim();
+  var groupEl = row.querySelector('[data-ha-group]');
+  var body = { mode: mode, label: label };
+  if (groupEl) {
+    var gid = groupEl.value;
+    var e = HA.entities.filter(function (x) { return x.id === id; })[0];
+    // Persist override only when different from HA default area; empty override = follow HA
+    if (e && e.haArea && gid === e.haArea) body.group_id = null;
+    else if (gid === '_other' && e && !e.haArea) body.group_id = null;
+    else body.group_id = gid;
+  }
+  api('PUT', 'ha/entities/' + encodeURIComponent(id), body).then(function () {
+    return refreshHA().then(function () { toast(mode === 'off' ? 'Hidden' : 'Saved'); });
+  }).catch(function (err) { toast(err.message); });
+}
+function saveGroupsOrder() {
+  if (!HA || !HA.groups) return Promise.resolve();
+  return api('PUT', 'ha/groups', { groups: HA.groups.map(function (g) { return { id: g.id, name: g.renamed ? g.name : null, sort: g.sort }; }) });
+}
+document.addEventListener('change', function (e) {
+  if (e.target.matches('[data-ha-pick]')) {
+    var pid0 = e.target.closest('[data-ha]').dataset.ha;
+    haPickOrder = haPickOrder.filter(function (x) { return x !== pid0; });
+    if (e.target.checked) haPickOrder.push(pid0);
+    var n = document.querySelectorAll('[data-ha-pick]:checked').length, bar = $('.ha-combine');
+    if (bar) { bar.hidden = n < 2; bar.querySelector('button').textContent = 'Combine ' + n + ' into one card'; }
+    return;
+  }
+  var row = e.target.closest('[data-ha]');
+  if (row && (e.target.matches('[data-ha-mode], [data-ha-label], [data-ha-group]'))) saveHA(row);
+});
+document.addEventListener('input', function (e) {
+  if (e.target.id === 'haFilter') { haFilter = e.target.value; clearTimeout(paintHA.t); paintHA.t = setTimeout(paintHA, 250); }
+});
+document.addEventListener('click', function (e) {
+  if (e.target.closest('[data-ha-load]')) return loadHA();
+  var more = e.target.closest('[data-ha-more]');
+  if (more) { var mr = more.closest('[data-ha]'), id0 = mr.dataset.ha; haOpen[id0] = !haOpen[id0]; mr.querySelector('.ha-edit').hidden = !haOpen[id0]; more.textContent = haOpen[id0] ? '⌄' : '›'; return; }
+  var ged = e.target.closest('[data-ha-gedit]');
+  if (ged) { var gk = 'g:' + ged.closest('[data-ha-gid]').getAttribute('data-ha-gid'); haOpen[gk] = !haOpen[gk]; ged.closest('[data-ha-gid]').querySelector('.ha-gtools').hidden = !haOpen[gk]; ged.textContent = haOpen[gk] ? 'Done' : 'Edit'; return; }
+  var show = e.target.closest('[data-ha-show]');
+  if (show) { haShow = show.getAttribute('data-ha-show'); paintHA(); return; }
+  if (e.target.closest('[data-ha-new-group]')) {
+    var name = prompt('New group name', 'New group');
+    if (!name) return;
+    return api('POST', 'ha/groups', { name: name }).then(function () { toast('Group added'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  var gup = e.target.closest('[data-ha-gup]');
+  var gdown = e.target.closest('[data-ha-gdown]');
+  if (gup || gdown) {
+    var card = e.target.closest('[data-ha-gid]');
+    if (!card || !HA.groups) return;
+    var id = card.getAttribute('data-ha-gid');
+    var sorted = HA.groups.slice().sort(function (a, b) { return a.sort - b.sort || String(a.name).localeCompare(String(b.name)); });
+    // Neighbours = visible group cards only (hidden empty areas keep their slots)
+    var vis = Array.prototype.map.call(document.querySelectorAll('#ha [data-ha-gid]'), function (c) { return c.getAttribute('data-ha-gid'); })
+      .filter(function (v) { return sorted.some(function (g) { return g.id === v; }); });
+    var vi = vis.indexOf(id), vj = gup ? vi - 1 : vi + 1;
+    if (vi < 0 || vj < 0 || vj >= vis.length) return;
+    var ia = sorted.findIndex(function (g) { return g.id === vis[vi]; }), ib = sorted.findIndex(function (g) { return g.id === vis[vj]; });
+    var t = sorted[ia]; sorted[ia] = sorted[ib]; sorted[ib] = t; // swap positions, then renumber in the NEW order
+    sorted.forEach(function (g, i) { g.sort = (i + 1) * 10; });
+    HA.groups = sorted;
+    return saveGroupsOrder().then(function () { toast('Order saved'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  var gdel = e.target.closest('[data-ha-gdel]');
+  if (gdel) {
+    var gc = e.target.closest('[data-ha-gid]');
+    if (!gc || !confirm('Delete this custom group? Devices go back to their HA area.')) return;
+    return api('DELETE', 'ha/groups/' + encodeURIComponent(gc.getAttribute('data-ha-gid'))).then(function () { toast('Deleted'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  if (e.target.closest('[data-ha-make-card]')) {
+    var picks = Array.prototype.map.call(document.querySelectorAll('[data-ha-pick]:checked'), function (c) {
+      return c.closest('[data-ha]').dataset.ha;
+    });
+    if (picks.length < 2) return toast('Check at least two sensors first');
+    var ordered = haPickOrder.filter(function (x) { return picks.indexOf(x) > -1; });
+    picks.forEach(function (x) { if (ordered.indexOf(x) < 0) ordered.push(x); });
+    picks = ordered; var primary = picks[0];
+    return api('PUT', 'ha/card', { entities: picks, primary: primary }).then(function () { toast('Card combined'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  var br = e.target.closest('[data-ha-break-card]');
+  if (br) {
+    var cid = br.getAttribute('data-ha-break-card');
+    var ids = HA.entities.filter(function (x) { return x.cardId === cid; }).map(function (x) { return x.id; });
+    return api('PUT', 'ha/card', { entities: [], clear: ids }).then(function () { toast('Card broken apart'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  var uc = e.target.closest('[data-ha-uncard]');
+  if (uc) {
+    var row = uc.closest('[data-ha]');
+    return api('PUT', 'ha/entities/' + encodeURIComponent(row.dataset.ha), { mode: row.querySelector('[data-ha-mode]').value, label: row.querySelector('[data-ha-label]').value.trim(), card_id: null, card_primary: 0 })
+      .then(function () { toast('Removed from card'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+  var prim = e.target.closest('[data-ha-primary]');
+  if (prim) {
+    var row = prim.closest('[data-ha]');
+    var sec = prim.closest('[data-ha-sec]');
+    var pid = sec ? sec.getAttribute('data-ha-sec') : row.dataset.ha;
+    var ent = HA.entities.filter(function (x) { return x.id === pid; })[0];
+    if (!ent || !ent.cardId) return;
+    var members = HA.entities.filter(function (x) { return x.cardId === ent.cardId; }).map(function (x) { return x.id; });
+    return api('PUT', 'ha/card', { entities: members, primary: ent.id, card_id: ent.cardId }).then(function () { toast('Primary set'); return refreshHA(); }).catch(function (err) { toast(err.message); });
+  }
+});
+// Rename group on blur (delegated focusout)
+document.addEventListener('focusout', function (e) {
+  if (!e.target.matches || !e.target.matches('[data-ha-gname]')) return;
+  var card = e.target.closest('[data-ha-gid]');
+  if (!card || !HA || !HA.groups) return;
+  var id = card.getAttribute('data-ha-gid');
+  var name = e.target.value.trim();
+  var g = HA.groups.filter(function (x) { return x.id === id; })[0];
+  if (!g) return;
+  var prev = g.renamed ? g.name : '';
+  if (name === prev) return;
+  g.name = name || null;
+  g.renamed = !!name;
+  if (!name && HA.areas && HA.areas[id]) g.name = HA.areas[id];
+  api('PUT', 'ha/groups', { groups: [{ id: id, name: name || null, sort: g.sort }] }).then(function () {
+    toast(name ? 'Renamed' : 'Using HA name'); return refreshHA();
+  }).catch(function (err) { toast(err.message); });
+});
+
+var FACES = { happy: '😀', sad: '😢', mad: '😠', tired: '😴', silly: '🤪' };
+function notesSection() {
+  return '<section id="notes"><h2>Notes to the kids</h2><p class="hint">Shows on their tab (turn on “Notes from parents”). They can tap a heart back.</p>' +
+    '<form class="row new" id="noteForm"><label>For<select name="person_id">' + S.people.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') + '</select></label>' +
+    '<label class="narrow">Emoji<input name="emoji" placeholder="💛"></label><label style="flex-basis:100%">Message<input name="text" maxlength="140" placeholder="Have a great day at school!"></label>' +
+    '<label>Photo (optional)<input type="file" name="photo" accept="image/*"></label><button class="primary">Send</button></form>' +
+    (S.notes.length ? '' : emptyBox('No notes yet', 'Send one above — it shows on their tab.')) + S.notes.map(function (n) {
+      return '<div class="item"><span class="grow">' + esc(n.emoji || '') + ' ' + esc(n.text || '') + (n.has_photo ? ' 📷' : '') + ' · <b>' + esc(nameOf(n.person_id)) + '</b> <span class="pill">' + esc(n.created_at) + ' UTC</span>' +
+        (n.hearted_at ? ' ❤️' : '') + '</span><button class="danger" data-del-note="' + n.id + '">Delete</button></div>';
+    }).join('') + '</section>';
+}
+function feelingsSection() {
+  return '<section id="feelings"><h2>Feelings check-ins</h2>' + (S.feelings.length ? S.feelings.map(function (f) {
+    return '<div class="item"><span class="grow">' + (FACES[f.feeling] || '') + ' <b>' + esc(nameOf(f.person_id)) + '</b> felt ' + esc(f.feeling) + '</span><span class="pill">' + new Date(f.created_at.replace(' ', 'T') + 'Z').toLocaleString() + '</span></div>';
+  }).join('') : emptyBox('No check-ins yet', 'Kids tap a face on their tab (turn on “Feelings check-in” under People).', '<a href="#/people"><button type="button" class="primary">Open People</button></a>')) + '</section>';
+}
+// Shrink a photo to ≤ 640px JPEG before upload
+function shrink(file) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      var k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That file isn’t an image')); }; img.src = url;
+  });
+}
+document.addEventListener('submit', function (e) {
+  if (e.target.id !== 'noteForm') return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  var f = e.target, file = f.elements.photo.files[0];
+  (file ? shrink(file) : Promise.resolve('')).then(function (photo) {
+    return api('POST', 'notes', { person_id: +f.elements.person_id.value, emoji: f.elements.emoji.value.trim(), text: f.elements.text.value.trim(), photo: photo });
+  }).then(function () { toast('Note sent'); load(); }).catch(function (err) { toast(err.message); });
+}, true);
+document.addEventListener('click', function (e) {
+  var id = e.target.dataset && e.target.dataset.delNote;
+  if (id && confirm('Delete this note?')) api('DELETE', 'notes/' + id).then(function () { toast('Deleted'); load(); }).catch(function (err) { toast(err.message); });
+});
+
+// Photos page: upload + a compact list of sources. Each source's pictures open in their own paged view (#/photos/<source>).
+function srcRoute(key) { return key.indexOf('album:') === 0 ? 'album/' + key.slice(6) : key; }
+function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+function photosSection() {
+  var src = (S.photoSources || []).filter(function (x) { return x.key !== 'demo'; });
+  return '<section id="photos"><h2>Photos & artwork</h2><p class="hint">Photos are resized on your phone and saved on the server. The date drives “on this day”.</p>' +
+    '<form class="row new" id="photoForm"><label style="flex-basis:100%">Pictures<input type="file" name="files" accept="image/*" multiple></label>' +
+    '<label>Date (blank = file date)<input type="date" name="date"></label><label>Who<select name="person_id">' + peopleOpts('Family').map(function (o) { return '<option value="' + o[0] + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' +
+    '<label class="narrow">Artwork<input type="checkbox" name="artwork"></label><label>Caption<input name="caption" placeholder="Beach day"></label><button class="primary">Upload</button></form></section>' +
+    '<section id="photoSrcs"><h2>Sources</h2><p class="hint">' + plural(S.photoTotal || 0, 'photo') + ' on the server. A picture in two sources is stored once.</p>' +
+    (S.photoTotal ? '' : emptyBox('No photos yet', 'The frame shows “Add photos in the admin” until you upload some or add Google Photos below.')) +
+    src.map(function (x) {
+      return '<a class="item" href="#/photos/' + srcRoute(x.key) + '"><span class="grow"><b>' + esc(x.name) + '</b><br><small class="hint">' + plural(x.count || 0, 'photo') +
+        (x.dups ? ' · ' + x.dups + ' also in another source' : '') + '</small></span><span class="chev" aria-hidden="true">›</span></a>';
+    }).join('') + '</section>';
+}
+// One source's photos: 60 thumbnails at a time (lazy images + Load more). The grid isn't redrawn by live updates (see patch).
+var GRID = null, GRID_PAGE = 60;
+function gridSrc(r) { return r.sub === 'album' ? 'album:' + r.id : r.sub; }
+function photoGridPage(r) {
+  var key = gridSrc(r), x = (S.photoSources || []).filter(function (s) { return s.key === key; })[0];
+  var back = '<a class="back" href="#/photos">‹ Photos</a>';
+  if (!x) return back + '<section id="photoHead"><p class="hint">That photo source no longer exists.</p></section>';
+  var a = r.sub === 'album' ? (S.google.albums || []).filter(function (g) { return String(g.id) === String(r.id); })[0] : null;
+  var meta = plural(x.count || 0, 'photo') + (a && a.last_total != null ? ' · ' + Math.min(a.count || 0, a.last_total) + ' of ' + a.last_total + ' imported' : '') + (x.dups ? ' · ' + x.dups + ' also in another source' : '');
+  return back + '<section id="photoHead"><h2>' + esc(x.name) + '</h2><p class="hint">' + esc(meta) + '. Newest first, by day. Tap a photo to see it larger or delete it (from this source only; a picture that’s also in another source stays on the frame).</p>' +
+    (a && a.checking ? '<p class="hint">Checking the album now; new photos appear after a refresh.</p>' : '') +
+    (S.storage && !S.storage.ok ? '<p class="err">Deleting is paused: the photo folder isn’t available.</p>' : '') + '</section>' +
+    '<section id="photoGrid"><div class="pdays" id="pgrid"></div><div class="pmore" id="pmore"><span class="hint">Loading…</span></div></section>';
+}
+function tileHtml(p) {
+  var badge = (p.artwork ? '🎨' : '') + (p.srcs && p.srcs.length > 1 ? (p.artwork ? ' ' : '') + '×' + p.srcs.length : '');
+  return '<button type="button" class="ptile" data-pid="' + p.id + '" aria-label="Open photo' + (p.date ? ' from ' + esc(p.date) : '') + '"><img src="/photos/thumb/' + esc(p.file) + '" loading="lazy" alt="">' +
+    (badge ? '<span class="pbadge">' + badge + '</span>' : '') + '</button>';
+}
+// Day headers: "Sun, May 19, 2024"; photos without a date go under "No date"
+function dayLabel(d) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); if (!m) return 'No date';
+  return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+// Rows arrive newest first, so a page only ever extends the last day group or starts new ones below it.
+function gridAppend(box, ps) {
+  ps.forEach(function (p) {
+    var day = p.date || '', last = box.lastElementChild;
+    if (!last || last.getAttribute('data-day') !== day) {
+      box.insertAdjacentHTML('beforeend', '<div class="pday" data-day="' + esc(day) + '"><h3>' + esc(dayLabel(day)) + '</h3><div class="pgrid"></div></div>');
+      last = box.lastElementChild;
+    }
+    last.querySelector('.pgrid').insertAdjacentHTML('beforeend', tileHtml(p));
+  });
+}
+function gridDrop(id) { // a tile left this source (deleted here or elsewhere): drop it, and its day header when that was the last one
+  var g = GRID, t = document.querySelector('#pgrid .ptile[data-pid="' + id + '"]'); if (!g || !t || !g.seen[id]) return;
+  var day = t.closest('.pday'); t.parentNode.removeChild(t); if (day && !day.querySelector('.ptile')) day.parentNode.removeChild(day);
+  delete g.seen[id]; delete g.rows[id]; g.order = g.order.filter(function (x) { return x !== +id; }); g.offset = Math.max(0, g.offset - 1);
+}
+function gridMore() {
+  var m = $('#pmore'); if (!m || !GRID) return;
+  m.innerHTML = GRID.err ? '<span class="err">' + esc(GRID.err) + '</span> <button type="button" data-pmore>Try again</button>'
+    : (GRID.fresh > 0 ? '<button type="button" data-pnew>Show ' + plural(GRID.fresh, 'new photo') + '</button> ' : '') + (GRID.next ? '<button type="button" data-pmore' + (GRID.busy ? ' disabled' : '') + '>' + (GRID.busy ? 'Loading…' : 'Load more (' + GRID.offset + ' of ' + GRID.total + ' shown)') + '</button>'
+    : '<span class="hint">' + (GRID.offset < GRID.total ? GRID.offset + ' of ' + GRID.total + ' shown' : GRID.total ? 'All ' + plural(GRID.offset, 'photo') + ' shown' : 'No photos in this source.') + '</span>');
+}
+// After a live change (import, delete elsewhere, re-date): ask the server about the tiles on screen (POST photos/sync):
+// the total, how many photos are newer than the top tile or inside the loaded range but not shown (→ "Show N new
+// photos", which reloads from the top), and which shown ids left this source (dropped here). Net-zero changes (one in,
+// one out) are caught too. The header's count is redrawn from the same state, so header and footer agree.
+var gridT = null;
+function cursorOf(r) { return r ? (r.date || '') + '|' + r.id : ''; }
+function gridRecount() {
+  var g = GRID; if (!g || gridT) return;
+  gridT = setTimeout(function () {
+    gridT = null; if (GRID !== g || g.busy || !g.loaded) return;
+    var ids = g.order.slice();
+    api('POST', 'photos/sync', { src: g.key, ids: ids, top: cursorOf(g.rows[ids[0]]), bottom: cursorOf(g.rows[ids[ids.length - 1]]) }).then(function (j) {
+      if (GRID !== g) return;
+      j.gone.forEach(gridDrop);
+      g.fresh = j.newer + j.missing; g.total = Math.max(j.total, g.offset); gridMore();
+    }).catch(function () {});
+  }, 1200);
+}
+document.addEventListener('click', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-pnew') && GRID) { var b = $('#pgrid'); if (b) b.innerHTML = ''; gridLoad(GRID.key, true); } });
+// Single-photo view: the photo, its date / place / caption and a Delete (confirmed, from this source only).
+function pviewEl() {
+  var v = document.getElementById('pview'); if (v) return v;
+  document.body.insertAdjacentHTML('beforeend', '<div id="pview" hidden role="dialog" aria-modal="true" aria-label="Photo"></div>');
+  return document.getElementById('pview');
+}
+function pviewClose() { var v = document.getElementById('pview'); if (v) { v.hidden = true; v.innerHTML = ''; } }
+function pviewOpen(id) {
+  var g = GRID, p = g && g.rows[id]; if (!p) return;
+  var src = (S.photoSources || []).filter(function (x) { return x.key === g.key; })[0], n = (p.srcs || []).length || 1;
+  var meta = [p.date ? dayLabel(p.date) : 'No date', p.place, p.caption].filter(Boolean).map(esc).join(' · ') + (n > 1 ? '<br>Also in ' + (n - 1) + ' other source' + (n > 2 ? 's' : '') + '.' : '');
+  var v = pviewEl();
+  v.innerHTML = '<div class="pv-bar"><b>' + esc(src ? src.name : g.key) + '</b><button type="button" class="pv-x" data-pview-close aria-label="Close">✕</button></div>' +
+    '<div class="pv-img"><img src="/photos/' + esc(p.file) + '" alt=""></div><div class="pv-meta">' + meta + '</div>' +
+    '<div class="pv-acts"><button type="button" data-pview-close>Close</button><button type="button" class="danger" data-del-photo="' + p.id + '" data-del-from="' + esc(g.key) + '" data-nsrc="' + n + '"' +
+    (S.storage && !S.storage.ok ? ' disabled title="Deleting is paused: the photo folder isn’t available"' : '') + '>' + (n > 1 ? 'Remove from this source' : 'Delete photo') + '</button></div>';
+  v.hidden = false;
+}
+document.addEventListener('click', function (e) {
+  var t = e.target.closest && e.target.closest('.ptile[data-pid]'); if (t) return pviewOpen(+t.getAttribute('data-pid'));
+  if (e.target.closest && e.target.closest('[data-pview-close]')) return pviewClose();
+  var v = document.getElementById('pview'); if (v && !v.hidden && e.target === v) pviewClose();
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pviewClose(); });
+window.addEventListener('hashchange', pviewClose);
+function gridLoad(key, reset) {
+  // keyset paging (after = date|id of the last tile), so an import running meanwhile can't cause duplicates or gaps;
+  // tiles are de-duplicated by id anyway. offset = tiles shown.
+  if (reset || !GRID || GRID.key !== key) GRID = { key: key, offset: 0, total: 0, fresh: 0, next: '', seen: {}, rows: {}, order: [], loaded: false, busy: false, err: '' };
+  if (GRID.busy) return;
+  var g = GRID; g.busy = true; g.err = ''; gridMore();
+  api('GET', 'photos/list?src=' + encodeURIComponent(key) + '&limit=' + GRID_PAGE + (g.next ? '&after=' + encodeURIComponent(g.next) : '')).then(function (j) {
+    if (GRID !== g) return; // navigated away
+    var box = $('#pgrid'); if (!box) return;
+    var fresh = j.photos.filter(function (p) { if (g.seen[p.id]) return false; g.seen[p.id] = 1; g.rows[p.id] = p; g.order.push(p.id); return true; });
+    gridAppend(box, fresh);
+    g.offset += fresh.length; g.total = Math.max(j.total, g.offset); g.next = j.next || ''; g.loaded = true;
+    if (reset) g.fresh = 0;
+  }).catch(function (e) { g.err = e.message; }).then(function () { g.busy = false; if (GRID === g) gridMore(); });
+}
+document.addEventListener('click', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-pmore') && GRID) gridLoad(GRID.key); });
+function shrinkBig(file) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); resolve({ data: c.toDataURL('image/jpeg', 0.85), orient: c.height > c.width ? 'p' : 'l' });
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That file isn’t an image')); }; img.src = url;
+  });
+}
+document.addEventListener('submit', function (e) {
+  if (e.target.id !== 'photoForm') return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  var f = e.target, files = Array.prototype.slice.call(f.elements.files.files), n = 0;
+  if (!files.length) return toast('Pick a picture first');
+  files.reduce(function (p, file) {
+    return p.then(function () { return shrinkBig(file); }).then(function (img) {
+      var d = f.elements.date.value || new Date(file.lastModified).toISOString().slice(0, 10);
+      toast('Uploading ' + (++n) + ' of ' + files.length + '…');
+      return api('POST', 'photos', { data: img.data, orient: img.orient, date: d, person_id: f.elements.person_id.value ? +f.elements.person_id.value : null, artwork: f.elements.artwork.checked, caption: f.elements.caption.value.trim() });
+    });
+  }, Promise.resolve()).then(function () { toast('Uploaded ' + n); load(); }).catch(function (err) { toast(err.message); });
+}, true);
+document.addEventListener('click', function (e) {
+  var id = e.target.dataset && e.target.dataset.delPhoto;
+  if (!id) return;
+  // A photo in several sources (same picture in two albums, or an album + an upload) is removed from this source only.
+  var from = e.target.dataset.delFrom, n = +e.target.dataset.nsrc || 1;
+  var nm = function (k) { var s = (S.photoSources || []).filter(function (x) { return x.key === k; })[0]; return s ? s.name : k; };
+  if (!confirm(n > 1 ? 'Remove this photo from “' + nm(from) + '”? It’s also in ' + (n - 1) + ' other source' + (n > 2 ? 's' : '') + ', so it stays on the frame.' : 'Delete this photo?')) return;
+  api('DELETE', 'photos/' + id + (from ? '?from=' + encodeURIComponent(from) : '')).then(function (r) {
+    pviewClose();
+    if (GRID) { var had = !!GRID.seen[id]; gridDrop(id); if (had && !(r && r.removed === false)) GRID.total = Math.max(0, GRID.total - 1); gridMore(); }
+    toast(r && r.removed === false ? 'It isn’t in ' + nm(from) + ' any more' : r && r.left && r.left.length ? 'Removed from ' + nm(from) + '. Still shown via ' + r.leftNames.join(', ') : 'Deleted'); load();
+  }).catch(function (err) { toast(err.message); });
+});
+
+// ------------------------------------------------------------------ Google Photos (picker + shared albums)
+function gWhen(iso) { return iso ? new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''; }
+function googleSection() {
+  var g = S.google, p = g.picker, inner;
+  var setup = '<form class="row" id="gClient"><label>Client ID<input name="client_id" value="' + esc(g.client_id) + '"' + (g.from_env ? ' disabled' : '') + ' placeholder="….apps.googleusercontent.com"></label>' +
+    '<label>Client secret<input name="client_secret" type="password" placeholder="' + (g.secret_set ? 'saved ' + esc(g.secret_hint) + ' (blank = keep)' : 'GOCSPX-…') + '"' + (g.from_env ? ' disabled' : '') + '></label>' +
+    '<div style="flex-basis:100%"><span class="card-desc">Redirect URI to register:</span><code class="g-uri">' + esc(g.redirect_uri) + '</code>' +
+    '<span class="card-desc">Google won’t accept a 192.168 address, so press Connect on this Mac’s browser (or paste the address back below).</span></div>' +
+    (g.from_env ? '' : foot()) + '</form>';
+  if (!g.client_id || !g.secret_set) inner = emptyBox('Not set up yet', 'Create a Google Cloud OAuth client (Web application), then paste its ID and secret here.') + setup;
+  else if (!g.connected) inner = '<div class="act"><button type="button" class="primary" data-gp="connect">Connect Google</button></div>' +
+    '<div class="row"><label style="flex:1">Connected from another computer? Paste the localhost address it landed on<input id="gPaste" placeholder="http://localhost:3030/api/google/callback?…"></label><button type="button" data-gp="paste">Finish</button></div>' +
+    '<details><summary class="hint">OAuth client</summary>' + setup + '</details>';
+  else {
+    var st = p.status === 'picking' ? 'Waiting for you to finish picking in Google Photos… <a href="' + esc(p.uri) + '" target="_blank" rel="noopener">Open picker</a> · <a href="#" data-gp="cancel">Cancel</a>'
+      : p.status === 'downloading' ? 'Downloading ' + p.added + ' so far…'
+      : p.status === 'done' ? 'Added ' + p.added + (p.dups ? ', ' + p.dups + ' duplicate' + (p.dups === 1 ? '' : 's') + ' skipped' : '') + (p.skipped - (p.dups || 0) > 0 ? ', skipped ' + (p.skipped - (p.dups || 0)) + ' (already here, deleted or video)' : '') + (p.failed ? ', failed ' + p.failed : '') + ' · ' + gWhen(p.at) +
+        (p.failed && p.last_error ? '<br><span class="err">' + esc(p.last_error) + '</span>' : '')
+      : p.status === 'error' ? '<span class="err">' + esc(p.error) + '</span>' : '';
+    inner = '<span class="card-desc">Connected ' + gWhen(g.connected_at) + ' · ' + g.picked + ' picked photo' + (g.picked === 1 ? '' : 's') + ' on the frame</span>' +
+      (st ? '<span class="card-desc">' + st + '</span>' : '') +
+      '<div class="form-foot"><button type="button" class="primary" data-gp="pick"' + (p.status === 'picking' || p.status === 'downloading' ? ' disabled' : '') + '>Pick photos</button>' +
+      '<button type="button" class="danger" data-gp="disconnect">Disconnect</button></div>' +
+      '<details><summary class="hint">OAuth client</summary>' + setup + '</details>';
+  }
+  var albums = g.albums.map(function (a) {
+    var pr = a.progress;
+    var meta = a.checking ? 'Checking now… ' + (!pr || pr.stage === 'reading' ? 'reading the album' : 'read ' + pr.read + (pr.total != null ? ' of ' + pr.total : '') + ' in ' + plural(pr.pages, 'page') + ', ' + pr.added + ' new so far')
+      : ((a.last_total != null ? Math.min(a.count || 0, a.last_total) + ' of ' + a.last_total + ' imported' : plural(a.count || 0, 'photo')) + (a.last_pages > 1 ? ' · ' + a.last_pages + ' pages read' : '') + (a.dups ? ' · ' + a.dups + ' duplicate' + (a.dups === 1 ? '' : 's') + ' skipped' : '') +
+      (a.last_removed ? ' · removed ' + a.last_removed : '') + ' · checked ' + (gWhen(a.last_checked) || 'not yet') + (a.last_ok ? ' · last success ' + gWhen(a.last_ok) : ''));
+    return '<div class="item"><span class="g-text"><b>' + esc(a.title || 'Shared album') + '</b><br><small class="hint">' + esc(meta) + '</small>' +
+      (a.last_error ? '<br><small class="err">' + esc(a.last_error) + '</small>' : '') + (a.last_warning && !a.checking ? '<br><small class="err">⚠ ' + esc(a.last_warning) + '</small>' : '') + '</span>' +
+      '<span class="g-act"><button type="button" data-gp-check="' + a.id + '"' + (a.checking ? ' disabled' : '') + '>Check now</button><button type="button" class="danger" data-gp-del="' + a.id + '">Remove</button></span></div>';
+  }).join('');
+  return '<section id="google">' +
+    '<div class="wg-card"><h4>Google Photos</h4><span class="card-desc">Pick photos from your library; copies are saved on this server for the frame.</span><div class="wg-fields">' + inner + '</div></div>' +
+    '<div class="wg-card" style="margin-top:10px"><h4>Shared albums</h4><span class="card-desc">Public album links are checked every 6 hours for new photos. Unofficial, so it can break; errors show here.</span>' +
+    (albums || emptyBox('No albums yet', 'In Google Photos: album → Share → Create link, then paste it below.')) +
+    '<form class="row new" id="gAlbum"><label style="flex:1">Album link<input name="url" placeholder="https://photos.app.goo.gl/…"></label><button class="primary">Add</button><small class="err full" data-aerr hidden></small></form>' +
+    '<p class="hint" style="margin:8px 0 0"><b>Which screens show it?</b> A new album shows on every screen, except screens where you picked specific photo sources. Change that per screen in <a href="#/screens">Screens</a> › pick a screen › Photos.</p></div></section>';
+}
+document.addEventListener('submit', function (e) {
+  var f = e.target;
+  if (f.id !== 'gClient' && f.id !== 'gAlbum') return;
+  e.preventDefault(); e.stopImmediatePropagation(); settle(f);
+  var btn = f.querySelector('button'), btnLabel = btn && btn.textContent, aerr = f.querySelector('[data-aerr]');
+  if (f.id === 'gAlbum' && btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = 'Checking…'; }
+  if (aerr) aerr.hidden = true;
+  var req = f.id === 'gClient'
+    ? api('PUT', 'google/client', { client_id: f.elements.client_id.value.trim(), client_secret: f.elements.client_secret.value.trim() })
+    : api('POST', 'google/albums', { url: f.elements.url.value.trim() });
+  var live = function () { return document.getElementById(f.id) || f; }; // a live redraw may have swapped the form
+  req.then(function () {
+    if (f.id === 'gAlbum') { var lf = live(); lf.elements.url.value = ''; var le = lf.querySelector('[data-aerr]'); if (le) le.hidden = true; lf.removeAttribute('data-dirty'); }
+    toast(f.id === 'gClient' ? 'Saved' : 'Album added, downloading…'); load();
+  }).catch(function (err) {
+    var lf = live(), le = lf.querySelector('[data-aerr]');
+    lf.setAttribute('data-dirty', '1');
+    if (le) { le.textContent = err.message; le.hidden = false; } else toast(err.message); // album errors stay next to the link field
+  }).then(function () {
+    var lb = f.id === 'gAlbum' && live().querySelector('button');
+    if (lb) { lb.disabled = false; lb.textContent = btnLabel || 'Add'; }
+  });
+}, true);
+document.addEventListener('click', function (e) {
+  var t = e.target, d = t.dataset || {}, done = function (msg) { return function () { toast(msg); load(); }; }, fail = function (err) { toast(err.message); };
+  if (d.gp === 'connect') return api('POST', 'google/auth').then(function (r) { window.open(r.url, '_blank'); }).catch(fail);
+  if (d.gp === 'paste') return api('POST', 'google/finish', { url: $('#gPaste').value }).then(done('Google connected')).catch(fail);
+  if (d.gp === 'pick') {
+    var w = window.open('', '_blank'); // open now so the popup isn't blocked, point it at Google once the session exists
+    return api('POST', 'google/pick').then(function (r) { if (w) w.location = r.uri; else toast('Allow pop-ups, or use Open picker'); load(); })
+      .catch(function (err) { if (w) w.close(); fail(err); });
+  }
+  if (d.gp === 'cancel') { e.preventDefault(); return api('POST', 'google/cancel').then(done('Cancelled')).catch(fail); }
+  if (d.gp === 'disconnect') {
+    if (!confirm('Disconnect Google Photos?')) return;
+    var wipe = S.google.picked && confirm('Also delete the ' + S.google.picked + ' picked photos from the frame? (Cancel keeps them)');
+    return api('POST', 'google/disconnect', { photos: !!wipe }).then(done('Disconnected')).catch(fail);
+  }
+  if (d.gpCheck) return api('POST', 'google/albums/' + d.gpCheck + '/check').then(done('Checking…')).catch(fail);
+  if (d.gpDel) {
+    if (!confirm('Remove this album?')) return;
+    var all = confirm('Also delete its downloaded photos? (Cancel keeps them on the frame)');
+    return api('DELETE', 'google/albums/' + d.gpDel + (all ? '?photos=1' : '')).then(done('Removed')).catch(fail);
+  }
+});
+
+// ------------------------------------------------------------------ screens (devices) + profiles
+var FAMILY_TABS = [['home', 'Today', 'Clock, weather and today at a glance'], ['calendar', 'Calendar', 'Family events'], ['tasks', 'Chores', 'Everyone’s chore lists'],
+  ['shopping', 'Shopping', 'Grocery list and usuals'], ['photos', 'Photos', 'Slideshow and artwork'], ['devices', 'Screens', 'Screen list (parent use)'],
+  ['profiles', 'Profiles', 'Screen profiles (parent use)'], ['control', 'Home (HA)', 'Home Assistant controls'], ['agents', 'Agents', 'Agent activity']];
+var EXTRA_TABS = [['kids', 'All kid tabs', 'One combined kids tab that follows the People list']];
+function tabOptions() {
+  return FAMILY_TABS.concat(EXTRA_TABS).map(function (o) { return [o[0], o[1]]; })
+    .concat(S.people.map(function (p) { return ['person-' + p.id, p.name + '’s tab']; }));
+}
+function screenForm(route, r) {
+  var tabs = null; try { tabs = r.tabs ? JSON.parse(r.tabs) : null; } catch (e) {}
+  var opts = tabOptions();
+  var isOn = function (k) { return tabs ? tabs.indexOf(k) > -1 : k !== 'kids'; };
+  var tabCard = function (title, desc, items, emptyHint) {
+    var allOn = items.length && items.every(function (o) { return isOn(o[0]); });
+    return '<div class="wg-card"><h4>' + title + (items.length ? '<button type="button" data-wg-all>' + (allOn ? 'Clear' : 'Select all') + '</button>' : '') + '</h4><span class="card-desc">' + desc + '</span>' +
+      (items.length ? items.map(function (o) {
+        return '<div class="wg-item"><label><input type="checkbox" data-tab="' + o[0] + '"' + (isOn(o[0]) ? ' checked' : '') + '><span><b>' + esc(o[1]) + '</b><span class="desc">' + esc(o[2]) + '</span></span></label></div>';
+      }).join('') : '<p class="hint" style="margin:6px 0 0">' + emptyHint + '</p>') + '</div>';
+  };
+  var kidItems = S.people.map(function (p) { return ['person-' + p.id, p.name + '’s tab', p.role === 'kid' ? 'Their chores, stars and widgets' : 'Their own tab']; });
+  var last = r.last_seen ? new Date(r.last_seen) : null, online = last && Date.now() - last < 6 * 60e3;
+  return '<form class="row screen" novalidate data-screen="' + route + '" data-id="' + esc(r.id) + '" style="border-top:0">' +
+    (route === 'devices' ? '<div class="full"><span class="pill">' + (online ? '🟢 online' : last ? 'seen ' + last.toLocaleString() : 'never seen') + '</span> <small class="hint">id: ' + esc(r.id) + (r.ip ? ' · ' + esc(r.ip) : '') + '</small></div>' : '') +
+    '<div class="head-fields"><label>Name<input name="name" value="' + esc(r.name || '') + '"></label>' +
+    '<label>Start tab<select name="default_tab">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (r.default_tab === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' +
+    (route === 'devices' ? '<label>Profile<select name="apply_profile">' + S.profiles.map(function (p) { return '<option value="' + p.id + '"' + (r.profile_id === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select></label><button type="button" data-apply>Apply</button>' : '') +
+    '</div><p class="hint full" style="margin:0">Tick the tabs to show, in list order. None ticked = everything.</p><div class="wg-grid">' +
+    tabCard('Family tabs', 'Shared screens for the whole family.', FAMILY_TABS) +
+    tabCard('Kid tabs', 'A personal tab for each person.', kidItems, 'Add people under People first.') +
+    tabCard('Extras', 'Optional combined views.', EXTRA_TABS) +
+    (route === 'devices' ? photoCard(r) : '') +
+    lookCard(route, r) +
+    nightCard(route, r) +
+    card('Kid-lock & quiet hours', 'Kid-lock hides parent screens; quiet hours dim the screen and mute sounds.',
+      '<label class="narrow">Kid-lock<input type="checkbox" name="kid_lock"' + (r.kid_lock ? ' checked' : '') + '></label>' +
+      '<label class="narrow">Quiet from<input type="time" step="60" name="quiet_start" value="' + esc(r.quiet_start || '') + '"></label>' +
+      '<label class="narrow">until<input type="time" step="60" name="quiet_end" value="' + esc(r.quiet_end || '') + '"></label>' + '<small class="err full" data-qerr hidden>Set both times, or clear both.</small>' +
+      '<label class="narrow">Night brightness %<input type="number" name="dim" min="5" max="100" value="' + (r.dim == null ? 40 : r.dim) + '"></label>') +
+    (route === 'devices' ? card('Kiosk exit PIN', 'For the Android frame app’s two-finger hold menu. ' + (r.kiosk_pin_set ? 'This screen has its own PIN.' : S.settings.kiosk_pin_set ? 'Uses the global PIN from Settings.' : 'No PIN: the menu opens without one. Set a global one in Settings, or one just for this screen here.'),
+      '<label>' + (r.kiosk_pin_set ? 'New PIN for this screen' : 'PIN for this screen') + '<input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" name="kiosk_pin" placeholder="' + (r.kiosk_pin_set ? 'Set — leave blank to keep' : 'blank = use global') + '"></label>' +
+      '<div class="full">' + (r.kiosk_pin_set ? '<button type="button" data-kiosk-clear>Remove this screen’s PIN</button> ' : '') + '<button type="button" data-kiosk-unlock>Clear lockout</button></div>') : '') +
+    '</div>' + foot(true, 'data-del-screen') + '</form>';
+}
+// Photos card: which sources this screen shows. Stored as opt-outs, so new albums appear on every screen.
+function photoCard(r) {
+  var off = (S.photoOff || []).filter(function (x) { return x.screen_id === r.id; }).map(function (x) { return x.source_key; });
+  var src = S.photoSources || [], allOn = src.every(function (s) { return off.indexOf(s.key) < 0; });
+  return '<div class="wg-card"><h4>Photos<button type="button" data-wg-all>' + (allOn ? 'Clear' : 'Select all') + '</button></h4><span class="card-desc">Which photos this screen shows. New albums show up here automatically.</span>' +
+    src.map(function (s) {
+      var meta = s.key === 'demo' ? 'Shown only when this screen has no other photos' : s.count + (s.count === 1 ? ' photo' : ' photos') + (s.dups ? ' · ' + s.dups + ' duplicate' + (s.dups === 1 ? '' : 's') + ' skipped' : '');
+      return '<div class="wg-item"><label><input type="checkbox" data-multi data-psrc="' + esc(s.key) + '"' + (off.indexOf(s.key) < 0 ? ' checked' : '') + '><span><b>' + esc(s.name) + '</b><span class="desc">' + esc(meta) + '</span></span></label></div>';
+    }).join('') + '</div>';
+}
+// Look card: the screen's (or profile's) theme. Profiles pass it on when applied to a screen.
+function lookCard(route, r) {
+  var th = r.theme === 'paper' ? 'paper' : 'default';
+  var opt = function (v, t, d) { return '<div class="wg-item"><label><input type="radio" name="theme" value="' + v + '"' + (th === v ? ' checked' : '') + '><span><b>' + t + '</b><span class="desc">' + d + '</span></span></label></div>'; };
+  return '<div class="wg-card"><h4>Look</h4><span class="card-desc">' + (route === 'profiles' ? 'Screens get this look when the profile is applied.' : 'How this screen looks. Photo frames per album are in Photos › Frame styles.') + '</span>' +
+    opt('default', 'Default', 'Clean and calm') + opt('paper', 'Colored paper', 'Torn paper cutouts and bright colors, made for kids') + '</div>';
+}
+// At night card: how the dashboard looks when tapped awake during quiet hours (devices/profiles.night_style).
+function nightCard(route, r) {
+  var ns = r.night_style === 'red' ? 'red' : 'dim';
+  var opt = function (v, t, d) { return '<div class="wg-item"><label><input type="radio" name="night_style" value="' + v + '"' + (ns === v ? ' checked' : '') + '><span><b>' + t + '</b><span class="desc">' + d + '</span></span></label></div>'; };
+  return '<div class="wg-card"><h4>At night</h4><span class="card-desc">How the dashboard looks when someone taps the night clock during quiet hours.' + (route === 'profiles' ? ' Screens get this when the profile is applied.' : '') + '</span>' +
+    opt('dim', 'Dim', 'Dark, with muted natural colors') + opt('red', 'Warm red', 'Amber and red only, with dimmer photos. Best for bedrooms') + '</div>';
+}
+// Photos › Frame styles: one select per photo source; autosaves (PUT photo-styles), 'auto' follows each screen's Look.
+var FRAME_STYLE_OPTS = [['auto', 'Auto'], ['plain', 'Plain'], ['polaroid', 'Polaroid'], ['torn', 'Torn paper']];
+function frameStylesSection() {
+  var src = (S.photoSources || []).filter(function (s) { return s.key !== 'demo'; }), st = S.photoStyles || {};
+  return '<section id="frameStyles"><div class="wg-card"><h4>Frame styles</h4><span class="card-desc">How each source’s photos are framed in the slideshow. Auto follows the screen’s Look: torn paper on Colored paper screens, plain elsewhere.</span>' +
+    src.map(function (s) {
+      var cur = st[s.key] || 'auto';
+      return '<div class="wg-item fs-row"><span class="fs-name"><b>' + esc(s.name) + '</b><span class="desc">' + s.count + (s.count === 1 ? ' photo' : ' photos') + '</span></span>' +
+        '<select data-fstyle="' + esc(s.key) + '" aria-label="Frame style for ' + esc(s.name) + '">' + FRAME_STYLE_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    }).join('') + '</div></section>';
+}
+document.addEventListener('change', function (e) {
+  var sel = e.target.closest && e.target.closest('[data-fstyle]');
+  if (!sel) return;
+  settle(sel);
+  api('PUT', 'photo-styles', { key: sel.dataset.fstyle, style: sel.value }).then(function () { toast('Frame style saved'); load(); }).catch(function (err) { toast(err.message); load(); });
+});
+function readPhotoOff(f) {
+  return Array.prototype.filter.call(f.querySelectorAll('[data-psrc]'), function (c) { return !c.checked; }).map(function (c) { return c.dataset.psrc; });
+}
+// Quiet hours need both ends or neither: show/hide the inline error under the time fields.
+function quietOk(f) {
+  var s = f.elements.quiet_start, e = f.elements.quiet_end, el = f.querySelector('[data-qerr]');
+  var half = (s.validity && s.validity.badInput) || (e.validity && e.validity.badInput); // e.g. hours typed, minutes blank
+  var bad = half || !s.value !== !e.value;
+  if (el) { el.hidden = !bad; el.textContent = half ? 'Finish the time (hours, minutes, AM/PM), or clear it.' : 'Set both times, or clear both.'; }
+  if (bad) { f.setAttribute('data-dirty', '1'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+  return !bad;
+}
+document.addEventListener('input', function (e) {
+  var f = e.target.form, el = f && f.querySelector('[data-qerr]');
+  if (el && !el.hidden && (e.target.name === 'quiet_start' || e.target.name === 'quiet_end') && !f.elements.quiet_start.validity.badInput && !f.elements.quiet_end.validity.badInput && !f.elements.quiet_start.value === !f.elements.quiet_end.value) el.hidden = true;
+});
+// What a form edits, as a version string: its own screen/profile row (minus check-in fields) + that screen's photo
+// opt-outs, or the settings. Stamped when the form is drawn; other screens / sections changing don't touch it.
+function formSig(f) {
+  if (f.id === 'settingsForm') return JSON.stringify(S.settings);
+  if (!f.dataset || !f.dataset.screen) return null;
+  var dev = f.dataset.screen === 'devices', id = f.dataset.id;
+  var r = (dev ? S.devices : S.profiles).filter(function (x) { return String(x.id) === id; })[0];
+  if (!r) return 'gone';
+  var o = {};
+  Object.keys(r).forEach(function (k) { if (k !== 'last_seen' && k !== 'ip' && k !== 'ua') o[k] = r[k]; });
+  if (dev) o.photoOff = (S.photoOff || []).filter(function (x) { return x.screen_id === r.id; }).map(function (x) { return x.source_key; }).sort();
+  return JSON.stringify(o);
+}
+function stamp(root) {
+  Array.prototype.forEach.call(root.querySelectorAll('form'), function (f) { f._sig = formSig(f); });
+  Array.prototype.forEach.call(root.matches && root.matches('section[id]') ? [root] : root.querySelectorAll('section[id]'), function (sec) { sec._base = sec.innerHTML; });
+}
+function formStale(f) { return f._sig != null && formSig(f) !== f._sig; }
+// This form was kept as a draft and its own screen/profile/settings changed elsewhere since: ask before overwriting.
+function staleOk(f) {
+  if (!formStale(f)) return true;
+  var what = f.id === 'settingsForm' ? 'these settings' : f.dataset.screen === 'profiles' ? 'this profile' : 'this screen';
+  if (confirm('Someone changed ' + what + ' on another device after you opened it. Save yours and replace their changes?')) return true;
+  f.setAttribute('data-dirty', '1'); return false;
+}
+function readScreen(f) {
+  // Order = list order on the page (Family, Kid, Extras)
+  var picked = Array.prototype.filter.call(f.querySelectorAll('[data-tab]'), function (c) { return c.checked; }).map(function (c) { return c.dataset.tab; });
+  return { name: f.elements.name.value.trim(), default_tab: f.elements.default_tab.value, kid_lock: f.elements.kid_lock.checked ? 1 : 0,
+    quiet_start: f.elements.quiet_start.value, quiet_end: f.elements.quiet_end.value, dim: +f.elements.dim.value || 40,
+    theme: (f.querySelector('input[name=theme]:checked') || {}).value || undefined,
+    night_style: (f.querySelector('input[name=night_style]:checked') || {}).value || undefined,
+    tabs: picked.length === tabOptions().length - 1 && picked.indexOf('kids') < 0 ? '' : JSON.stringify(picked) };
+}
+function seenPill(r) {
+  var last = r.last_seen ? new Date(r.last_seen) : null, online = last && Date.now() - last < 6 * 60e3;
+  return '<span class="pill">' + (online ? '🟢 online' : last ? 'seen ' + last.toLocaleString() : 'never seen') + '</span>';
+}
+function devicesList() {
+  return '<section id="devices"><h2>Screens</h2><p class="hint">Every frame/tablet/browser that opens the dashboard shows up here (new ones get the Family profile). Tap one to change its tabs, kid-lock and quiet hours. ' +
+    'Give a frame a fixed id by adding <code>?device=NAME</code> to its URL, e.g. http://192.168.7.237:5173/?device=kitchen</p>' +
+    (S.devices.length ? S.devices.map(function (d) {
+      var prof = S.profiles.filter(function (p) { return p.id === d.profile_id; })[0];
+      return '<a class="item" href="#/screens/' + encodeURIComponent(d.id) + '"><span class="grow"><b>' + esc(d.name || d.id) + '</b> ' + seenPill(d) + '<br><small class="hint">' + esc(d.id) + (d.ip ? ' · ' + esc(d.ip) : '') + (prof ? ' · ' + esc(prof.name) + ' profile' : '') + (d.kid_lock ? ' · 🔒 kid-lock' : '') + '</small></span><span class="chev">›</span></a>';
+    }).join('') : emptyBox('No screens yet', 'Open the dashboard on a frame or tablet and it appears here.')) + '</section>';
+}
+function deviceDetail(id) {
+  var d = S.devices.filter(function (x) { return String(x.id) === id; })[0];
+  return '<a class="back" href="#/screens">‹ All screens</a>' +
+    (d ? '<section id="device"><h2>' + esc(d.name || d.id) + '</h2>' + screenForm('devices', d) + '</section>' : '<section id="device"><p class="hint">That screen no longer exists.</p></section>');
+}
+function profilesSection() {
+  return '<section id="profiles"><h2>Screen profiles</h2><p class="hint">Templates you can apply to a screen (open a screen → Apply profile). “All kid tabs” follows the People list.</p>' +
+    S.profiles.map(function (p) { return '<details class="item" style="display:block"><summary><b>' + esc(p.name) + '</b> <span class="chev">›</span></summary>' + screenForm('profiles', p) + '</details>'; }).join('') +
+    '<form class="row new" id="newProfile"><label>New profile name<input name="name"></label><button class="primary">Add</button></form></section>';
+}
+document.addEventListener('submit', function (e) {
+  var f = e.target;
+  if (f.id === 'newProfile') { e.preventDefault(); e.stopImmediatePropagation(); return api('POST', 'profiles', { name: f.elements.name.value.trim() || 'Profile' }).then(function () { toast('Added'); load(); }).catch(function (err) { toast(err.message); }); }
+  if (!f.dataset.screen) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  // Quiet hours need both ends; one blank end is ignored by the frame, so don't save a half pair.
+  if (f.elements.quiet_start && !quietOk(f)) return;
+  if (!staleOk(f)) return;
+  settle(f); // this handler stops the event before the generic settle() listener sees it
+  var path = f.dataset.screen + '/' + encodeURIComponent(f.dataset.id), hasPhotos = !!f.querySelector('[data-psrc]');
+  var kp = f.elements.kiosk_pin ? f.elements.kiosk_pin.value.trim() : '', kc = f.elements.clear_kiosk_pin && f.elements.clear_kiosk_pin.checked;
+  if (kp && !/^\d{4,8}$/.test(kp)) { f.setAttribute('data-dirty', '1'); return toast('Kiosk PIN must be 4–8 digits'); }
+  api('PUT', path, readScreen(f)).then(function () { return hasPhotos ? api('PUT', path + '/photo-sources', { off: readPhotoOff(f) }) : null; })
+    .then(function () { return kp || kc ? api('PUT', path + '/kiosk-pin', kp ? { pin: kp } : { clear: true }) : null; })
+    .then(function () { toast('Saved'); load(); }).catch(function (err) { f.setAttribute('data-dirty', '1'); toast(err.message); });
+}, true);
+// Kiosk exit PIN buttons: Remove PIN (global → none; per screen → back to global) and Clear lockout.
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-kiosk-clear],[data-kiosk-unlock]');
+  if (!b) return;
+  var f = b.closest('form'), dev = f && f.dataset.screen === 'devices' ? 'devices/' + encodeURIComponent(f.dataset.id) : null;
+  if (b.hasAttribute('data-kiosk-clear')) {
+    if (!confirm(dev ? 'Remove this screen’s kiosk PIN? It will use the global one (if any).' : 'Remove the global kiosk PIN? Screens without their own PIN will open the menu without one.')) return;
+    api('PUT', dev ? dev + '/kiosk-pin' : 'settings', dev ? { clear: true } : { clear_kiosk_pin: true }).then(function () { toast('Kiosk PIN removed'); load(); }).catch(function (err) { toast(err.message); });
+  } else {
+    api('POST', dev ? dev + '/kiosk-clear-lockout' : 'kiosk/clear-lockout').then(function () { toast('Lockout cleared'); }).catch(function (err) { toast(err.message); });
+  }
+});
+document.addEventListener('click', function (e) {
+  var f = e.target.closest('form[data-screen]');
+  if (!f) return;
+  // Apply copies the profile into this screen: un-dirty the form first so the refresh redraws it with the
+  // profile's values (otherwise the stale form stays up and the next Save writes the old values back).
+  if (e.target.hasAttribute('data-apply')) {
+    // An unsaved Name isn't part of the profile: put it back (still unsaved) after the redraw.
+    var devId = f.dataset.id, nm = f.elements.name.value, nmDirty = nm !== (S.devices.filter(function (x) { return String(x.id) === devId; })[0] || {}).name;
+    settle(f);
+    api('POST', 'devices/' + encodeURIComponent(devId) + '/apply-profile', { profile_id: +f.elements.apply_profile.value }).then(function () { toast('Profile applied'); return load(); }).then(function () {
+      var nf = document.querySelector('form[data-screen="devices"][data-id="' + devId.replace(/["\\]/g, '') + '"]');
+      if (nf && nmDirty) { nf.elements.name.value = nm; nf.setAttribute('data-dirty', '1'); }
+    }).catch(function (err) { toast(err.message); });
+  }
+  if (e.target.hasAttribute('data-del-screen') && confirm('Delete?')) { settle(f); api('DELETE', f.dataset.screen + '/' + encodeURIComponent(f.dataset.id)).then(function () { toast('Deleted'); if (f.dataset.screen === 'devices') location.hash = '#/screens'; load(); }).catch(function (err) { toast(err.message); }); }
+});
+
+// ------------------------------------------------------------------ routing: one section visible at a time
+var NAV = [['today', '🏠', 'Today'], ['people', '👪', 'People'], ['chores', '⭐', 'Chores'], ['screens', '🖼️', 'Screens'], ['home', '💡', 'Home'], ['photos', '📷', 'Photos'], ['settings', '⚙️', 'Settings']];
+// Old single-page anchors (#approvals etc.) → new routes so bookmarks keep working
+var OLD = { approvals: 'today', stars: 'today', notes: 'today', feelings: 'today', rewards: 'chores', routines: 'chores', devices: 'screens', profiles: 'screens',
+  ha: 'home', calendars: 'settings/calendars', countdowns: 'settings/countdowns', icons: 'settings/icons', stores: 'settings/shopping', usuals: 'settings/shopping' };
+var SETTINGS_SUB = [['', 'General'], ['calendars', 'Calendars'], ['countdowns', 'Countdowns'], ['icons', 'Picture words'], ['shopping', 'Stores & usuals']];
+function route() {
+  var raw = location.hash.replace(/^#\/?/, ''), parts = raw.split('/').map(function (x) { try { return decodeURIComponent(x); } catch (e) { return x; } });
+  if (parts[0] === 'rewards' && parts[1]) return { top: 'chores', sub: 'reward', id: parts[1] };
+  if (OLD[parts[0]] && parts.length === 1) { location.replace('#/' + OLD[parts[0]]); return null; }
+  var top = NAV.some(function (n) { return n[0] === parts[0]; }) ? parts[0] : 'today';
+  return { top: top, sub: parts[1] || '', id: parts[2] || '' };
+}
+function pageHead(title, hint) { return '<div class="pagehead"><h1>' + title + '</h1>' + (hint ? '<span class="hint" style="margin:0">' + hint + '</span>' : '') + '</div>'; }
+function pageHtml(r) {
+  switch (r.top) {
+    case 'people':
+      if (r.sub) {
+        var p = S.people.filter(function (x) { return String(x.id) === r.sub; })[0];
+        return '<a class="back" href="#/people">‹ All people</a>' + (p ? personEditor(p) : '<section id="person"><p class="hint">That person no longer exists.</p></section>');
+      }
+      return pageHead('People') + '<section id="people"><p class="hint">' + T('people').hint + ' Tap someone to edit their tab, bedtime and approval.</p>' +
+        (S.people.length ? S.people.map(function (p) {
+          return '<a class="item" href="#/people/' + p.id + '"><span class="dot" style="background:' + esc(p.color || '#ccc') + '"></span><span class="grow"><b>' + esc(p.name) + '</b> <span class="pill">' + esc(p.role) + '</span></span>' + (p.role === 'kid' ? '<span class="pill">★ ' + p.stars + '</span>' : '') + '<span class="chev">›</span></a>';
+        }).join('') : '<p class="hint">No one yet.</p>') + '</section>' +
+        '<section id="addperson"><details><summary><b>Add a person</b></summary>' + newForm(T('people')) + '</details></section>';
+    case 'chores':
+      if (r.sub === 'reward') return itemDetail('rewards', r.id);
+      if (r.sub) return itemDetail('chores', r.sub);
+      return pageHead('Chores & rewards') + choresPage();
+    case 'screens':
+      if (r.sub) return deviceDetail(r.sub);
+      return pageHead('Screens') + devicesList() + profilesSection();
+    case 'home':
+      return pageHead('Home') + haSection();
+    case 'photos':
+      if (/^(album|upload|picker|kept)$/.test(r.sub)) return photoGridPage(r);
+      return pageHead('Photos') + photosSection() + googleSection() + frameStylesSection();
+    case 'settings':
+      var sub = SETTINGS_SUB.some(function (x) { return x[0] === r.sub; }) ? r.sub : '';
+      var body = sub === 'calendars' ? table(T('calendars'), 1) : sub === 'countdowns' ? table(T('countdowns'), 1) : sub === 'icons' ? table(T('icons'), 1) :
+        sub === 'shopping' ? table(T('stores')) + table(T('usuals')) : storageSection() + settings();
+      return pageHead('Settings') + '<div class="subnav">' + SETTINGS_SUB.map(function (x) { return '<a href="#/settings' + (x[0] ? '/' + x[0] : '') + '"' + (x[0] === sub ? ' class="on"' : '') + '>' + x[1] + '</a>'; }).join('') + '</div>' + body;
+    default:
+      return pageHead('Today') + approvals() + starsSection() + feelingsSection() + notesSection();
+  }
+}
+function personEditor(p) {
+  var cfg = T('people');
+  var wf = cfg.fields.filter(function (f) { return f.k === 'widgets'; })[0];
+  return '<section id="person"><h2>' + esc(p.name) + (p.role === 'kid' ? ' <span class="pill">★ ' + p.stars + '</span>' : '') + '</h2><p class="hint">Their own tab, bedtime light and chore approval.</p>' +
+    '<form class="row" data-route="people" data-id="' + p.id + '" style="border-top:0"><div class="wg-grid">' +
+    card('Profile', 'Who they are on the dashboard.', fieldsOf(cfg, ['name', 'role', 'color', 'birthday'], p)) +
+    card('Bedtime light', 'Ok-to-wake times and the Home Assistant light that shows them.', fieldsOf(cfg, ['bedtime', 'wake', 'wake_light', 'wake_color', 'bed_color'], p)) +
+    card('Chores', 'Approval override and who’s-home entity.', fieldsOf(cfg, ['approval', 'ha_entity'], p)) +
+    '<div class="wg-panel"><h4>On their tab<label class="hsw">Own tab<input type="checkbox" name="show_tab"' + (p.show_tab == null || p.show_tab === '' || p.show_tab ? ' checked' : '') + '></label></h4>' +
+      field({ k: wf.k, label: '', type: 'widgets', def: wf.def }, p.widgets) + '</div>' +
+    '</div>' + foot(true) + '</form></section>';
+}
+function choresPage() {
+  var rname = function (id) { var x = S.routines.filter(function (r) { return r.id === id; })[0]; return x ? x.name : ''; };
+  return '<section id="chores"><h2>Chores</h2><p class="hint">' + T('chores').hint + '</p>' +
+    (S.chores.length ? S.chores.map(function (c) {
+      return '<a class="item" href="#/chores/' + c.id + '"><span class="emo">' + esc(c.emoji || '⭐') + '</span><span class="grow"><b>' + esc(c.title) + '</b>' + (c.active ? '' : ' <span class="pill">off</span>') +
+        '<br><small class="hint">' + esc(nameOf(c.person_id)) + (rname(c.routine_id) ? ' · ' + esc(rname(c.routine_id)) : '') + ' · ' + dayInitials(c.days) + '</small></span><span class="pill">★ ' + esc(c.stars) + '</span><span class="chev">›</span></a>';
+    }).join('') : emptyBox('No chores yet', 'Add the first one below — kids see it on their tab.')) + '</section>' +
+    '<section id="addchore"><details><summary><b>Add chore</b></summary>' + newForm(T('chores')) + '</details></section>' +
+    '<section id="rewards"><h2>Rewards</h2><p class="hint">' + T('rewards').hint + '</p>' +
+    (S.rewards.length ? S.rewards.map(function (w) {
+      return '<a class="item" href="#/rewards/' + w.id + '"><span class="emo">' + esc(w.emoji || '🎁') + '</span><span class="grow"><b>' + esc(w.title) + '</b>' + (w.active ? '' : ' <span class="pill">off</span>') + '</span><span class="pill">★ ' + esc(w.cost) + '</span><span class="chev">›</span></a>';
+    }).join('') : emptyBox('No rewards yet', 'Add something stars can buy below.')) + '</section>' +
+    '<section id="addreward"><details><summary><b>Add reward</b></summary>' + newForm(T('rewards')) + '</details></section>' +
+    '<section id="routines"><h2>Routine times</h2><p class="hint">' + T('routines').hint + '</p><div class="wg-grid">' +
+    S.routines.map(function (r) { return '<div class="wg-card"><h4>' + esc(r.name) + '</h4>' + rowForm(T('routines'), r) + '</div>'; }).join('') + '</div></section>';
+}
+function itemDetail(route, id) {
+  var cfg = T(route), x = (S[cfg.key] || []).filter(function (r) { return String(r.id) === String(id); })[0];
+  var sid = route === 'chores' ? 'chore' : 'reward';
+  return '<a class="back" href="#/chores">‹ Chores & rewards</a>' +
+    (x ? '<section id="' + sid + '"><h2>' + esc((x.emoji || '') + ' ' + x.title) + '</h2>' + rowForm(cfg, x).replace('<form class="row"', '<form class="row" style="border-top:0"') + '</section>'
+       : '<section id="' + sid + '"><p class="hint">That ' + sid + ' no longer exists.</p></section>');
+}
+function paintNav(r) {
+  var n = (S.pending || []).length + (S.rewardRequests || []).length;
+  var w = $('#storeWarn'), st = S.storage || {}, mv = st.move;
+  if (w) {
+    var html = !st.ok ? '⚠ <b>' + esc(st.reason) + '.</b> The frame shows only the photos it can still read (none if the whole folder is gone). Downloads, uploads, album removal sync and deleting photos are paused until the folder is back. <a href="#/settings">Storage settings</a>'
+      : mv && mv.state === 'copying' ? 'Moving photos to ' + esc(mv.to) + ': ' + mv.done + ' of ' + mv.total + ' copied and checked. Downloads and deletes wait until it’s done.'
+      : st.low ? '⚠ Only ' + gb(st.free) + ' free on the photo disk. <a href="#/settings">Storage</a>' : '';
+    w.innerHTML = html; w.hidden = !html; w.className = !st.ok || st.low ? '' : 'info';
+  }
+  $('#nav').innerHTML = NAV.map(function (x) {
+    return '<a href="#/' + x[0] + '"' + (x[0] === r.top ? ' class="on" aria-current="page"' : '') + '><span class="ic">' + x[1] + '</span><span>' + x[2] + '</span>' + (x[0] === 'today' && n ? '<span class="badge">' + n + '</span>' : '') + '</a>';
+  }).join('');
+}
+var lastRouteKey = '';
+function render() {
+  defineTables();
+  var r = route(); if (!r) return;
+  var navItem = NAV.filter(function (x) { return x[0] === r.top; })[0];
+  $('#ptitle').textContent = r.top === 'chores' ? 'Chores & rewards' : navItem[2];
+  paintNav(r);
+  $('#main').innerHTML = pageHtml(r);
+  stamp($('#main'));
+  $('#stale').hidden = true;
+  var key = r.top + '/' + r.sub + '/' + (r.id || '');
+  if (key !== lastRouteKey) { window.scrollTo(0, 0); lastRouteKey = key; }
+  if (r.top === 'settings' && r.sub === 'ha') { var h = $('#ha-settings'); if (h) { h.scrollIntoView({ block: 'start' }); var u = $('[name=ha_url]'); if (u) u.focus({ preventScroll: true }); } }
+  if (r.top === 'home' && !HA) loadHA(); // check status as soon as Home opens
+  if (r.top === 'photos' && $('#pgrid')) gridLoad(gridSrc(r), true); else GRID = null;
+}
+window.addEventListener('hashchange', function () { if (S) render(); });
+// After a Save/Add/Delete/Approve: refresh S, then redraw only clean panels (drafts elsewhere survive).
+// First load, or full=true, redraws everything.
+function load(full) {
+  var first = $('#app').hidden || !S;
+  return api('GET', 'admin').then(function (s) {
+    S = s; $('#gate').hidden = true; $('#app').hidden = false;
+    if (first || full === true) render(); else patch();
+  }).catch(function (e) { if (PIN) toast(e.message); });
+}
+$('#staleGo').onclick = function () {
+  if ($('#main [data-dirty]') && !confirm('Discard your unsaved edits on this page and show the latest?')) return;
+  load(true);
+};
+// The form/row you just acted on is no longer a draft: un-mark it so the refresh can redraw it.
+function settle(el) {
+  var holder = el && el.closest && (el.closest('form') || el.closest('.item') || el.closest('section'));
+  if (!holder) return;
+  holder.removeAttribute('data-dirty');
+  var sec = holder.closest('section'); if (sec && sec !== holder && !sec.querySelector('form')) sec.removeAttribute('data-dirty');
+  var a = document.activeElement; if (a && holder.contains(a) && a.blur) a.blur();
+}
+document.addEventListener('submit', function (e) { settle(e.target); }, true);
+// Clear dirty only after an action is confirmed / starts — not on every button click
+// (Delete + Cancel used to leave edits unprotected against live updates).
+
+// ------------------------------------------------------------------ dirty tracking + live patching
+// Any edit inside #main marks its form (or section) dirty. HA rows auto-save and the HA search box is local, so they don't count.
+function markDirty(e) {
+  var t = e.target;
+  if (!t.closest || !t.closest('#main') || t.closest('#ha') || t.closest('[data-ha]') || t.closest('[data-fstyle]') || t.id === 'haFilter') return; // frame styles autosave
+  if (t.name === 'photos_dir' && t.closest('#storage')) return; // carried over by keepStoreDir instead
+  var holder = t.closest('form') || t.closest('section');
+  if (holder) holder.setAttribute('data-dirty', '1');
+}
+document.addEventListener('input', markDirty);
+document.addEventListener('change', function (e) {
+  markDirty(e);
+  var box = e.target.closest && e.target.closest('.wg-card');
+  if (box && e.target.matches && e.target.matches('[data-multi],[data-tab]')) {
+    var boxes = box.querySelectorAll('[data-multi],[data-tab]');
+    var allOn = Array.prototype.every.call(boxes, function (c) { return c.checked; });
+    var btn = box.querySelector('[data-wg-all]');
+    if (btn) btn.textContent = allOn ? 'Clear' : 'Select all';
+  }
+});
+function isBusy(sec) {
+  if (sec.hasAttribute('data-dirty') || sec.querySelector('[data-dirty]')) return true;
+  var a = document.activeElement;
+  if (a && a.name === 'photos_dir' && sec.id === 'storage') return false; // the folder field is carried over (keepStoreDir): the storage numbers stay live, no banner
+  return !!(a && sec.contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName));
+}
+// The album add form keeps its typed link, its inline error and its busy button across live redraws (like keep-dirty).
+function keepAlbumForm(cur, fresh) {
+  var o = cur.querySelector('#gAlbum'), n = fresh.querySelector('#gAlbum');
+  if (!o || !n) return;
+  n.elements.url.value = o.elements.url.value;
+  var oe = o.querySelector('[data-aerr]'), ne = n.querySelector('[data-aerr]');
+  if (oe && ne) { ne.textContent = oe.textContent; ne.hidden = oe.hidden; }
+  var ob = o.querySelector('button'), nb = n.querySelector('button');
+  if (ob && nb) { nb.disabled = ob.disabled; nb.textContent = ob.textContent; }
+  if (o.hasAttribute('data-dirty')) n.setAttribute('data-dirty', '1');
+}
+// Re-render the current page off-screen and swap in only the sections nobody is editing.
+function patch(quiet) {
+  defineTables();
+  var r = route(); if (!r) return;
+  paintNav(r);
+  var tpl = document.createElement('template'), kept = 0, stale = 0;
+  tpl.innerHTML = pageHtml(r);
+  Array.prototype.forEach.call(tpl.content.querySelectorAll('section[id]'), function (fresh) {
+    var cur = document.getElementById(fresh.id);
+    if (!cur || fresh.id === 'ha' || fresh.id === 'photoGrid') return; // HA list comes from Home Assistant; loaded thumbnails stay
+    if (isBusy(cur)) {
+      kept++;
+      // banner only when what's being edited changed: the draft form's own row, or (forms without a version) this section
+      var forms = cur.querySelectorAll('form'), a = document.activeElement, versioned = false;
+      Array.prototype.forEach.call(forms, function (f) {
+        if (f._sig == null) return;
+        versioned = true;
+        if ((f.hasAttribute('data-dirty') || (a && f.contains(a))) && formStale(f)) stale++;
+      });
+      if (!versioned && cur._base != null && fresh.innerHTML !== cur._base) stale++;
+      return;
+    }
+    var base = fresh.innerHTML; // before the kept album-form bits are copied in
+    keepAlbumForm(cur, fresh);
+    var om = cur.querySelector('#pdirMsg'), nm = fresh.querySelector('#pdirMsg'); if (om && nm) { nm.innerHTML = om.innerHTML; nm.className = om.className; }
+    var refocus = keepStoreDir(cur, fresh);
+    cur.parentNode.replaceChild(fresh, cur);
+    if (refocus) refocus();
+    stamp(fresh); fresh._base = base;
+  });
+  if (!kept) $('#stale').hidden = true; // everything redrawn → no banner
+  else if (stale && !quiet) $('#stale').hidden = false; // a kept draft's own screen/section changed elsewhere (quiet: our own write)
+}
+
+// ------------------------------------------------------------------ actions
+document.addEventListener('submit', function (e) {
+  var form = e.target;
+  e.preventDefault();
+  if (form.id === 'settingsForm') {
+    if (!quietOk(form)) return;
+    if (!staleOk(form)) return;
+    var body = { quiet_start: form.elements.quiet_start.value, quiet_end: form.elements.quiet_end.value, sounds_muted: form.elements.sounds_muted.checked, learning_items: form.elements.learning_items.value, family_goal_emoji: form.elements.family_goal_emoji.value.trim(),
+      family_goal_title: form.elements.family_goal_title.value.trim(), family_goal_stars: form.elements.family_goal_stars.value.trim(), approval_required: form.elements.approval_required.checked, location: form.elements.location.value.trim(), units: form.elements.units.value, ha_url: form.elements.ha_url.value.trim() };
+    if (form.elements.ha_token.value.trim()) body.ha_token = form.elements.ha_token.value.trim();
+    if (form.elements.clear_ha_token && form.elements.clear_ha_token.checked) body.clear_ha_token = true;
+    if (form.elements.new_pin.value.trim()) body.new_pin = form.elements.new_pin.value.trim();
+    if (form.elements.kiosk_pin.value.trim()) body.kiosk_pin = form.elements.kiosk_pin.value.trim();
+    else if (form.elements.clear_kiosk_pin && form.elements.clear_kiosk_pin.checked) body.clear_kiosk_pin = true;
+    if (body.kiosk_pin && !/^\d{4,8}$/.test(body.kiosk_pin)) { form.setAttribute('data-dirty', '1'); return toast('Kiosk PIN must be 4–8 digits'); }
+    return api('PUT', 'settings', body).then(function () {
+      if (body.new_pin) { PIN = body.new_pin; sessionStorage.setItem('pin', PIN); }
+      HA = null; toast('Settings saved'); load();
+    }).catch(function (err) { toast(err.message); });
+  }
+  var cfg = T(form.dataset.route);
+  if (!cfg) return;
+  var data = readForm(form, cfg.fields), id = form.dataset.id;
+  if (cfg.route === 'people' && !data.name) { form.setAttribute('data-dirty', '1'); return toast('Give this person a name first'); }
+  api(id ? 'PUT' : 'POST', cfg.route + (id ? '/' + id : ''), data).then(function () { toast(id ? 'Saved' : 'Added'); load(); }).catch(function (err) { toast(err.message); });
+});
+document.addEventListener('click', function (e) {
+  var t = e.target, form = t.closest('form');
+  var act = function (p, body, msg) { settle(t); return api('POST', p, body).then(function () { toast(msg); load(); }).catch(function (err) { toast(err.message); }); };
+  var wgBtn = t.closest('[data-wg-all]');
+  if (wgBtn) {
+    var card = wgBtn.closest('.wg-card');
+    var boxes = card.querySelectorAll('[data-multi],[data-tab]');
+    var allOn = Array.prototype.every.call(boxes, function (c) { return c.checked; });
+    Array.prototype.forEach.call(boxes, function (c) { c.checked = !allOn; });
+    wgBtn.textContent = allOn ? 'Select all' : 'Clear';
+    if (form) form.setAttribute('data-dirty', '1');
+    return;
+  }
+  if (t.hasAttribute('data-del') && form) {
+    if (!confirm('Delete this?')) return;
+    settle(form);
+    return api('DELETE', form.dataset.route + '/' + form.dataset.id).then(function () { toast('Deleted'); if (form.dataset.route === 'people') location.hash = '#/people'; if (/^(chores|rewards)$/.test(form.dataset.route) && location.hash !== '#/chores') location.hash = '#/chores'; load(); }).catch(function (err) { toast(err.message); });
+  }
+  if (t.dataset.approve) return act('completions/' + t.dataset.approve + '/approve', null, 'Approved ★');
+  if (t.dataset.reject) return act('completions/' + t.dataset.reject + '/reject', null, 'Sent back');
+  if (t.dataset.rrApprove) return act('redemptions/' + t.dataset.rrApprove + '/approve', null, 'Reward given 🎉');
+  if (t.dataset.rrDeny) return act('redemptions/' + t.dataset.rrDeny + '/deny', null, 'Declined');
+  if (t.hasAttribute('data-approve-all')) return act('completions/approve-all', null, 'All approved ★');
+  if (t.dataset.adj) return act('stars', { person_id: +t.dataset.adj, delta: +t.dataset.d, reason: 'Parent adjustment' }, 'Stars updated');
+  if (t.dataset.redeem) {
+    var sel = $('[data-reward-for="' + t.dataset.redeem + '"]');
+    return act('redeem', { person_id: +t.dataset.redeem, reward_id: +sel.value }, 'Reward redeemed 🎉');
+  }
+});
+
+// Live: when something changes elsewhere (e.g. a chore is ticked on the frame).
+if (window.EventSource) {
+  // Never wipes the page: fetch fresh state, then patch only untouched sections (see patch()).
+  var es = new EventSource('/api/events'), lt, own = null;
+  es.addEventListener('change', function (ev) {
+    if (!S || !PIN) return;
+    clearTimeout(lt);
+    var d = {}; try { d = JSON.parse(ev.data); } catch (x) {}
+    own = (own === null ? true : own) && d.client === CLIENT_ID; // a batch is ours only if every event in it is ours
+    lt = setTimeout(function () { var o = own; own = null; api('GET', 'admin').then(function (s) { S = s; patch(o); gridRecount(); }).catch(function () {}); }, 300);
+  });
+  // Photo-move progress: refresh quietly (no "changed elsewhere" banner), at most every 1.5 s.
+  var stT = null;
+  es.addEventListener('storage', function () {
+    if (!S || !PIN || stT) return;
+    stT = setTimeout(function () { stT = null; api('GET', 'admin').then(function (s) { S = s; patch(true); }).catch(function () {}); }, 1500);
+  });
+}
+if (PIN) load().then(function () { if (!S) showGate(); }); else showGate();
+</script>
+</body>
+</html>
